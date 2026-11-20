@@ -1,1538 +1,356 @@
 <!DOCTYPE html>
-<html lang="si" data-theme="dark">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CEYLON RIDE</title>
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    crossorigin=""
-  />
+  <title>CEYLON RIDE - Route & Live GPS Meter</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
-    :root {
-      --bg: #0e1013;
-      --surface: #171a20;
-      --surface-2: #20252e;
-      --text: #f3f5f8;
-      --muted: #9aa3b2;
-      --primary: #f59e0b;
-      --primary-text: #111317;
-      --green: #16a34a;
-      --red: #dc2626;
-      --border: rgba(255, 255, 255, 0.12);
-      --meter-bg: #090b0e;
-      --meter-fg: #ffffff;
-      --accent-green: #4ade80;
-      --accent-orange: #fb923c;
-    }
-
-    html[data-theme="light"] {
-      --bg: #f4f6f9;
-      --surface: #ffffff;
-      --surface-2: #eef1f6;
-      --text: #12151a;
-      --muted: #5c6573;
-      --primary: #d97706;
-      --primary-text: #ffffff;
-      --green: #15803d;
-      --red: #b91c1c;
-      --border: rgba(15, 23, 42, 0.14);
-      --meter-bg: #111418;
-      --meter-fg: #ffffff;
-      --accent-green: #4ade80;
-      --accent-orange: #fb923c;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Sinhala", "Noto Sans Tamil", sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      transition: background 0.2s ease, color 0.2s ease;
-    }
-
-    .topbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      padding: 12px 16px;
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      position: sticky;
-      top: 0;
-      z-index: 20;
-    }
-
-    .brand {
-      font-weight: 800;
-      font-size: 17px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      letter-spacing: 0.4px;
-    }
-
-    .top-actions {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    select, input, button {
-      font-family: inherit;
-      font-size: 14px;
-    }
-
-    select {
-      background: var(--surface-2);
-      color: var(--text);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 7px 10px;
-      cursor: pointer;
-    }
-
-    .icon-btn {
-      background: var(--surface-2);
-      color: var(--text);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 7px 10px;
-      cursor: pointer;
-    }
-
-    .container {
-      max-width: 520px;
-      margin: 0 auto;
-      padding: 16px;
-    }
-
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 16px;
-      margin-bottom: 14px;
-    }
-
-    .card-header-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      margin-bottom: 10px;
-    }
-
-    .card-title {
-      font-weight: 700;
-      font-size: 15px;
-    }
-
-    .form-group {
-      margin-bottom: 12px;
-    }
-
-    label {
-      display: block;
-      font-size: 12px;
-      color: var(--muted);
-      margin-bottom: 5px;
-    }
-
-    input {
-      width: 100%;
-      padding: 10px 12px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      background: var(--surface-2);
-      color: var(--text);
-    }
-
-    input:disabled {
-      opacity: 0.6;
-    }
-
-    .grid-3 {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-    }
-
-    .presets {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 12px;
-    }
-
-    .chip {
-      border: 1px solid var(--border);
-      background: var(--surface-2);
-      color: var(--text);
-      padding: 8px 12px;
-      border-radius: 999px;
-      cursor: pointer;
-      font-weight: 600;
-      font-size: 13px;
-    }
-
-    .chip.active {
-      background: var(--primary);
-      color: var(--primary-text);
-      border-color: var(--primary);
-    }
-
-    .chip:disabled {
-      opacity: 0.55;
-      cursor: not-allowed;
-    }
-
-    .btn {
-      width: 100%;
-      padding: 13px 16px;
-      border-radius: 12px;
-      border: none;
-      font-weight: 700;
-      cursor: pointer;
-      font-size: 15px;
-    }
-
-    .btn-primary {
-      background: var(--primary);
-      color: var(--primary-text);
-    }
-
-    .btn-start {
-      background: var(--green);
-      color: #ffffff;
-    }
-
-    .btn-end {
-      background: var(--red);
-      color: #ffffff;
-    }
-
-    .btn-outline {
-      background: transparent;
-      color: var(--text);
-      border: 1px solid var(--border);
-      margin-top: 8px;
-    }
-
-    .btn-sm {
-      background: var(--surface-2);
-      color: var(--text);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 5px 10px;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    .btn-sm.danger {
-      color: #ef4444;
-    }
-
-    .link-btn {
-      background: none;
-      border: none;
-      color: var(--primary);
-      font-weight: 600;
-      cursor: pointer;
-      width: 100%;
-      margin-top: 12px;
-      text-align: center;
-    }
-
-    .error-msg {
-      color: #ef4444;
-      font-size: 13px;
-      font-weight: 600;
-      margin-bottom: 10px;
-    }
-
-    .muted {
-      color: var(--muted);
-      font-size: 13px;
-    }
-
-    .meter-box {
-      background: var(--meter-bg);
-      color: var(--meter-fg);
-      border-radius: 18px;
-      padding: 22px 18px;
-      text-align: center;
-      border: 1px solid rgba(245, 158, 11, 0.35);
-      margin-bottom: 14px;
-    }
-
-    .meter-tag {
-      color: var(--primary);
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.8px;
-    }
-
-    .fare-big {
-      font-size: 44px;
-      font-weight: 900;
-      margin: 8px 0 16px;
-      word-break: break-word;
-    }
-
-    .stats-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-
-    .stat-pill {
-      background: rgba(255, 255, 255, 0.05);
-      border-radius: 12px;
-      padding: 10px;
-    }
-
-    .stat-label {
-      font-size: 11px;
-      color: #b5becb;
-    }
-
-    .stat-val {
-      font-size: 20px;
-      font-weight: 800;
-      margin-top: 4px;
-    }
-
-    .val-dist {
-      color: var(--accent-green);
-    }
-
-    .val-wait {
-      color: var(--accent-orange);
-    }
-
-    /* Live Map Box */
-    .map-wrap {
-      width: 100%;
-      height: 230px;
-      border-radius: 12px;
-      overflow: hidden;
-      border: 1px solid var(--border);
-      background: var(--surface-2);
-    }
-
-    #live-map {
-      width: 100%;
-      height: 100%;
-    }
-
-    .map-status-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 8px;
-      margin-top: 8px;
-      font-size: 12px;
-      color: var(--muted);
-    }
-
-    /* History Section */
-    .history-totals {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin-bottom: 12px;
-    }
-
-    .history-stat-box {
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 10px 12px;
-    }
-
-    .history-stat-val {
-      font-size: 17px;
-      font-weight: 800;
-      margin-top: 3px;
-      color: var(--primary);
-    }
-
-    .history-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      max-height: 320px;
-      overflow-y: auto;
-    }
-
-    .history-item {
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 11px 12px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .history-item-left {
-      min-width: 0;
-    }
-
-    .history-veh {
-      font-weight: 700;
-      font-size: 14px;
-    }
-
-    .history-meta {
-      font-size: 12px;
-      color: var(--muted);
-      margin-top: 3px;
-    }
-
-    .history-fare {
-      font-weight: 800;
-      font-size: 15px;
-      color: var(--primary);
-      white-space: nowrap;
-    }
-
-    /* Passenger Fullscreen Overlay */
-    .passenger-overlay {
-      position: fixed;
-      inset: 0;
-      background: #080a0d;
-      color: #ffffff;
-      z-index: 100;
-      display: none;
-      flex-direction: column;
-      justify-content: space-between;
-      padding: 20px;
-    }
-
-    .passenger-overlay.show {
-      display: flex;
-    }
-
-    .p-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .p-badge {
-      border: 1px solid #f59e0b;
-      color: #f59e0b;
-      background: rgba(245, 158, 11, 0.14);
-      padding: 7px 14px;
-      border-radius: 999px;
-      font-weight: 700;
-      font-size: 14px;
-    }
-
-    .p-exit {
-      background: rgba(255, 255, 255, 0.1);
-      color: #ffffff;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: 10px;
-      padding: 8px 12px;
-      cursor: pointer;
-    }
-
-    .p-center {
-      text-align: center;
-    }
-
-    .p-fare {
-      font-size: clamp(48px, 13vw, 82px);
-      font-weight: 900;
-      margin-top: 10px;
-    }
-
-    .p-stats {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 14px;
-      margin-bottom: 14px;
-    }
-
-    .p-card {
-      background: #141820;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 16px;
-      padding: 16px;
-      text-align: center;
-    }
-
-    .p-card-val {
-      font-size: clamp(24px, 6.5vw, 36px);
-      font-weight: 800;
-      margin-top: 6px;
-    }
-
-    .p-rates {
-      background: #141820;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 12px;
-      padding: 10px 14px;
-      text-align: center;
-      font-size: 12px;
-      color: #cbd5e1;
-    }
-
-    /* Modal */
-    .modal-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.65);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 16px;
-      z-index: 200;
-    }
-
-    .modal-backdrop.show {
-      display: flex;
-    }
-
-    .modal-card {
-      background: var(--surface);
-      color: var(--text);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 20px;
-      width: 100%;
-      max-width: 380px;
-    }
-
-    .modal-row {
-      margin: 8px 0;
-      font-size: 14px;
-    }
-
-    .modal-total {
-      font-size: 20px;
-      font-weight: 800;
-      margin: 12px 0 16px;
-      padding-top: 10px;
-      border-top: 1px solid var(--border);
-    }
-
-    .hidden {
-      display: none !important;
-    }
+    body { margin: 0; font-family: Arial, sans-serif; background: #0d1117; color: #f0f6fc; padding: 14px; }
+    .card { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 14px; margin-bottom: 14px; }
+    .rates { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+    .rates label, .field label { font-size: 11px; color: #8b949e; display: block; margin-bottom: 4px; font-weight: 700; }
+    input[type="number"], input[type="text"] {
+      width: 100%; box-sizing: border-box; background: #0d1117; color: #fff;
+      border: 1px solid #30363d; border-radius: 8px; padding: 9px 10px; font-size: 14px;
+    }
+    .field { margin-bottom: 10px; }
+    .input-row { display: flex; gap: 6px; }
+    .btn-small {
+      background: #21262d; color: #58a6ff; border: 1px solid #30363d; border-radius: 8px;
+      padding: 0 10px; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap;
+    }
+    .btn-route {
+      width: 100%; padding: 10px; background: #1f6feb; color: #fff; border: none;
+      border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 2px;
+    }
+    .route-info {
+      margin-top: 8px; font-size: 12px; color: #58a6ff; background: #0d1117;
+      padding: 8px 10px; border-radius: 8px; border: 1px solid #30363d; display: none;
+    }
+    .fare-box { text-align: center; padding: 6px 0; }
+    .fare { font-size: 34px; font-weight: 700; color: #fff; margin: 4px 0; }
+    .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
+    .stat { background: #0d1117; border-radius: 10px; padding: 10px; text-align: center; }
+    .stat .val { font-size: 19px; font-weight: 700; }
+    .green { color: #3fb950; }
+    .orange { color: #d29922; }
+    #map { height: 270px; border-radius: 10px; overflow: hidden; }
+    .map-meta { display: flex; justify-content: space-between; font-size: 12px; color: #8b949e; margin-top: 8px; }
+    .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; margin-bottom: 10px; }
+    .btn-start { background: #238636; color: #fff; }
+    .btn-stop { background: #da3633; color: #fff; }
+    .btn-sec { background: #21262d; color: #c9d1d9; border: 1px solid #30363d; }
+    .status-msg { font-size: 12px; color: #d29922; margin-top: 6px; min-height: 16px; }
   </style>
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">🚕 <span id="txt-app-title">CEYLON RIDE</span></div>
-    <div class="top-actions">
-      <select id="lang-select" aria-label="Language">
-        <option value="si">සිංහල</option>
-        <option value="en">English</option>
-        <option value="ta">தமிழ்</option>
-      </select>
-      <button id="theme-btn" class="icon-btn" type="button" title="Theme">☀️</button>
-      <button id="logout-btn" class="icon-btn hidden" type="button">Logout</button>
-    </div>
-  </header>
 
-  <!-- AUTH SECTION -->
-  <main id="auth-view" class="container">
-    <div class="card">
-      <h2 id="auth-heading" style="text-align:center; margin-bottom:4px;">රියදුරු පිවිසුම</h2>
-      <p id="auth-sub" class="muted" style="text-align:center; margin-bottom:16px;">CEYLON RIDE මීටරය ආරම්භ කිරීමට පිවිසෙන්න</p>
-
-      <div id="reg-fields" class="hidden">
-        <div class="form-group">
-          <label id="lbl-name" for="reg-name">රියදුරුගේ සම්පූර්ණ නම</label>
-          <input id="reg-name" type="text" placeholder="Kasun Perera" />
-        </div>
-        <div class="form-group">
-          <label id="lbl-veh-no" for="reg-veh">වාහන අංකය</label>
-          <input id="reg-veh" type="text" placeholder="WP ABC-1234" />
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label id="lbl-phone" for="auth-phone">දුරකථන අංකය</label>
-        <input id="auth-phone" type="tel" value="0770000000" />
-      </div>
-
-      <div class="form-group">
-        <label id="lbl-pin" for="auth-pin">ඉලක්කම් 4ක PIN අංකය</label>
-        <input id="auth-pin" type="password" inputmode="numeric" value="1234" />
-      </div>
-
-      <div id="auth-error" class="error-msg hidden"></div>
-
-      <button id="auth-submit-btn" class="btn btn-primary" type="button">ඇතුළු වන්න</button>
-      <button id="auth-switch-btn" class="link-btn" type="button">අලුත් රියදුරෙක්ද? Register වන්න</button>
-    </div>
-  </main>
-
-  <!-- METER SECTION -->
-  <main id="meter-view" class="container hidden">
-    <div class="card">
-      <div id="driver-welcome" style="font-weight:700;">ආයුබෝවන්, Kasun Perera</div>
-      <div id="driver-meta" class="muted">WP ABC-1234 • 0770000000</div>
-    </div>
-
-    <div class="card">
-      <div class="card-header-row">
-        <div id="txt-preset-title" class="card-title">වාහන වර්ගය තෝරන්න</div>
-      </div>
-      <div id="presets-container" class="presets"></div>
-
-      <div class="grid-3">
-        <div>
-          <label id="lbl-base" for="base-fare">1 වන 1km (රු.)</label>
-          <input id="base-fare" type="number" min="0" step="1" value="100" />
-        </div>
-        <div>
-          <label id="lbl-perkm" for="per-km">ඊළඟ 1km (රු.)</label>
-          <input id="per-km" type="number" min="0" step="1" value="80" />
-        </div>
-        <div>
-          <label id="lbl-wait" for="wait-rate">Waiting/විනාඩි</label>
-          <input id="wait-rate" type="number" min="0" step="0.5" value="4" />
-        </div>
+  <!-- Route Planner Card -->
+  <div class="card">
+    <div class="field">
+      <label>START LOCATION (උදා: Matara)</label>
+      <div class="input-row">
+        <input id="startInput" type="text" placeholder="Enter start town/place..." />
+        <button class="btn-small" type="button" onclick="useCurrentAsStart()">My GPS</button>
       </div>
     </div>
-
-    <div class="meter-box">
-      <div id="meter-badge" class="meter-tag">CEYLON RIDE • 3-WHEEL • දැනට ගාස්තුව</div>
-      <div id="fare-display" class="fare-big">Rs. 0.00</div>
-      <div class="stats-row">
-        <div class="stat-pill">
-          <div id="lbl-dist" class="stat-label">දුර</div>
-          <div id="dist-display" class="stat-val val-dist">0.000 km</div>
-        </div>
-        <div class="stat-pill">
-          <div id="lbl-wait-time" class="stat-label">WAITING TIME</div>
-          <div id="wait-display" class="stat-val val-wait">00:00</div>
-        </div>
-      </div>
+    <div class="field">
+      <label>END LOCATION (උදා: Galle)</label>
+      <input id="endInput" type="text" placeholder="Enter destination town/place..." />
     </div>
+    <button class="btn-route" type="button" onclick="planRoute()">SHOW ROUTE ON MAP</button>
+    <div class="route-info" id="routeInfo"></div>
+  </div>
 
-    <!-- LIVE MAP CARD -->
-    <div class="card">
-      <div class="card-header-row">
-        <div id="txt-map-title" class="card-title">Live GPS Map</div>
-        <button id="center-map-btn" class="btn-sm" type="button">Center</button>
-      </div>
-      <div class="map-wrap">
-        <div id="live-map"></div>
-      </div>
-      <div class="map-status-bar">
-        <span id="map-coords">Colombo, LK</span>
-        <span id="map-meters-badge">0 m</span>
-      </div>
+  <!-- Fare Meter Card -->
+  <div class="card">
+    <div class="rates">
+      <div><label>1ST KM (RS.)</label><input id="baseFare" type="number" value="100" /></div>
+      <div><label>NEXT KM (RS.)</label><input id="perKm" type="number" value="80" /></div>
+      <div><label>WAIT/MIN (RS.)</label><input id="perWaitMin" type="number" value="4" /></div>
     </div>
-
-    <button id="trip-toggle-btn" class="btn btn-start" type="button">ගමන ආරම්භ කරන්න</button>
-    <button id="passenger-view-btn" class="btn btn-outline" type="button">මගියාට පෙන්වන්න</button>
-
-    <!-- TRIP HISTORY CARD -->
-    <div class="card" style="margin-top: 14px;">
-      <div class="card-header-row">
-        <div id="txt-history-title" class="card-title">ගිය ගමන් වාර්තාව (Trip History)</div>
-        <button id="clear-history-btn" class="btn-sm danger hidden" type="button">Clear</button>
+    <div class="fare-box">
+      <div style="font-size:11px;color:#8b949e;letter-spacing:1px;">CEYLON RIDE • 3-WHEEL • <span id="tripModeLabel">READY</span></div>
+      <div class="fare" id="fareDisplay">Rs. 0.00</div>
+      <div class="stats">
+        <div class="stat"><div style="font-size:11px;color:#8b949e;">TRAVELED</div><div class="val green" id="distDisplay">0.000 km</div></div>
+        <div class="stat"><div style="font-size:11px;color:#8b949e;">WAITING TIME</div><div class="val orange" id="waitDisplay">00:00</div></div>
       </div>
-
-      <div class="history-totals">
-        <div class="history-stat-box">
-          <div id="lbl-total-trips" class="muted" style="font-size:11px;">මුළු ගමන්</div>
-          <div id="val-total-trips" class="history-stat-val">0</div>
-        </div>
-        <div class="history-stat-box">
-          <div id="lbl-total-earned" class="muted" style="font-size:11px;">මුළු ආදායම</div>
-          <div id="val-total-earned" class="history-stat-val">Rs. 0.00</div>
-        </div>
-      </div>
-
-      <div id="history-empty" class="muted" style="text-align:center; padding:12px 0;">
-        තවම ගමන් වාර්තා නොමැත.
-      </div>
-      <div id="history-list" class="history-list"></div>
-    </div>
-  </main>
-
-  <!-- PASSENGER VIEW OVERLAY -->
-  <section id="passenger-overlay" class="passenger-overlay" aria-live="polite">
-    <div class="p-top">
-      <div id="p-badge" class="p-badge">CEYLON RIDE • 3-Wheel</div>
-      <button id="p-exit-btn" class="p-exit" type="button">Driver View</button>
-    </div>
-
-    <div class="p-center">
-      <div id="p-fare-label" style="color:#cbd5e1; font-size:18px;">දැනට ගාස්තුව</div>
-      <div id="p-fare" class="p-fare">Rs. 0.00</div>
-    </div>
-
-    <div>
-      <div class="p-stats">
-        <div class="p-card">
-          <div id="p-dist-label" style="color:#94a3b8; font-size:13px;">දුර</div>
-          <div id="p-dist" class="p-card-val val-dist">0.000 km</div>
-        </div>
-        <div class="p-card">
-          <div id="p-wait-label" style="color:#94a3b8; font-size:13px;">WAITING TIME</div>
-          <div id="p-wait" class="p-card-val val-wait">00:00</div>
-        </div>
-      </div>
-      <div id="p-rates" class="p-rates"></div>
-    </div>
-  </section>
-
-  <!-- TRIP SUMMARY MODAL -->
-  <div id="summary-modal" class="modal-backdrop">
-    <div class="modal-card">
-      <h3 id="sum-title">CEYLON RIDE • ගමන අවසන්</h3>
-      <div id="sum-date" class="modal-row muted"></div>
-      <div id="sum-vehicle" class="modal-row"></div>
-      <div id="sum-dist" class="modal-row"></div>
-      <div id="sum-wait" class="modal-row"></div>
-      <div id="sum-total" class="modal-total"></div>
-      <button id="sum-ok-btn" class="btn btn-primary" type="button">හරි</button>
     </div>
   </div>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <!-- Live Map Card -->
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <strong>Live GPS & Route Map</strong>
+      <button class="btn-sec" style="padding:5px 10px;border-radius:6px;cursor:pointer;" onclick="centerMap()">My Location</button>
+    </div>
+    <div id="map"></div>
+    <div class="map-meta">
+      <span id="locLabel">Waiting for GPS...</span>
+      <span id="metersLabel">0 m (0.000 km)</span>
+    </div>
+    <div class="status-msg" id="statusMsg"></div>
+  </div>
+
+  <button class="btn btn-start" id="tripBtn" onclick="toggleTrip()">START TRIP</button>
+  <button class="btn btn-sec" onclick="resetMeter()">RESET ALL</button>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    const APP_NAME = 'CEYLON RIDE';
+    const map = L.map("map").setView([6.0535, 80.2210], 11);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "&copy; OpenStreetMap"
+    }).addTo(map);
 
-    const I18N = {
-      si: {
-        appTitle: APP_NAME,
-        loginTitle: 'රියදුරු පිවිසුම',
-        loginSub: `${APP_NAME} මීටරය ආරම්භ කිරීමට පිවිසෙන්න`,
-        regTitle: 'රියදුරු ලියාපදිංචිය',
-        regSub: `${APP_NAME} රියදුරු ගිණුම සාදන්න`,
-        nameLbl: 'රියදුරුගේ සම්පූර්ණ නම',
-        vehLbl: 'වාහන අංකය (උදා: WP ABC-1234)',
-        phoneLbl: 'දුරකථන අංකය',
-        pinLbl: 'ඉලක්කම් 4ක PIN අංකය',
-        loginBtn: 'ඇතුළු වන්න',
-        regBtn: 'ලියාපදිංචි වී ඉදිරියට යන්න',
-        toReg: 'අලුත් රියදුරෙක්ද? Register වන්න',
-        toLogin: 'දැනටමත් ගිණුමක් තිබේද? Login වන්න',
-        fillAll: 'කරුණාකර අවශ්‍ය සියලු තොරතුරු ඇතුළත් කරන්න.',
-        pinShort: 'PIN අංකය අවම ඉලක්කම් 4ක් විය යුතුය.',
-        badCreds: 'දුරකථන අංකය හෝ PIN අංකය වැරදියි.',
-        dupPhone: 'මෙම දුරකථන අංකය දැනටමත් ලියාපදිංචි කර ඇත.',
-        welcome: 'ආයුබෝවන්',
-        logout: 'ඉවත් වන්න',
-        presetTitle: 'වාහන වර්ගය තෝරන්න',
-        baseLbl: '1 වන 1km (රු.)',
-        perKmLbl: 'ඊළඟ 1km (රු.)',
-        waitLbl: 'Waiting/විනාඩි',
-        currentFare: 'දැනට ගාස්තුව',
-        dist: 'දුර',
-        waitTime: 'WAITING TIME',
-        mapTitle: 'Live GPS Map',
-        centerBtn: 'Center',
-        startTrip: 'ගමන ආරම්භ කරන්න',
-        endTrip: 'ගමන අවසන් කරන්න',
-        passengerView: 'මගියාට පෙන්වන්න',
-        driverView: 'Driver View',
-        passengerMeter: 'මගී මීටරය',
-        sumTitle: `${APP_NAME} • ගමන අවසන්`,
-        date: 'දිනය/වේලාව',
-        vehicle: 'වාහනය',
-        totalDist: 'මුළු දුර',
-        waited: 'රැඳී සිටි කාලය',
-        totalFare: 'මුළු ගාස්තුව',
-        ok: 'හරි',
-        historyTitle: 'ගිය ගමන් වාර්තාව (Trip History)',
-        totalTrips: 'මුළු ගමන්',
-        totalEarned: 'මුළු ආදායම',
-        noHistory: 'තවම ගමන් වාර්තා නොමැත.',
-        clearHistory: 'මකන්න',
-        confirmClear: 'සියලුම ගමන් වාර්තා මකා දමන්නද?',
-        gpsUnsupported: 'මෙම Browser එක GPS සඳහා සහාය නොදක්වයි.'
-      },
-      en: {
-        appTitle: APP_NAME,
-        loginTitle: 'Driver Login',
-        loginSub: `Sign in to start ${APP_NAME}`,
-        regTitle: 'Driver Registration',
-        regSub: `Create your ${APP_NAME} driver account`,
-        nameLbl: 'Driver Full Name',
-        vehLbl: 'Vehicle Number (e.g. WP ABC-1234)',
-        phoneLbl: 'Phone Number',
-        pinLbl: '4-Digit PIN',
-        loginBtn: 'Login',
-        regBtn: 'Register & Continue',
-        toReg: 'New driver? Register here',
-        toLogin: 'Already registered? Login',
-        fillAll: 'Please fill all required fields.',
-        pinShort: 'PIN must be at least 4 digits.',
-        badCreds: 'Invalid phone number or PIN.',
-        dupPhone: 'This phone number is already registered.',
-        welcome: 'Welcome',
-        logout: 'Logout',
-        presetTitle: 'Select Vehicle Type',
-        baseLbl: '1st 1km (Rs.)',
-        perKmLbl: 'Next 1km (Rs.)',
-        waitLbl: 'Wait/min (Rs.)',
-        currentFare: 'CURRENT FARE',
-        dist: 'DISTANCE',
-        waitTime: 'WAITING TIME',
-        mapTitle: 'Live GPS Map',
-        centerBtn: 'Center',
-        startTrip: 'START TRIP',
-        endTrip: 'END TRIP',
-        passengerView: 'PASSENGER VIEW',
-        driverView: 'Driver View',
-        passengerMeter: 'Passenger Meter',
-        sumTitle: `${APP_NAME} • Trip Summary`,
-        date: 'Date/Time',
-        vehicle: 'Vehicle',
-        totalDist: 'Total Distance',
-        waited: 'Waiting Time',
-        totalFare: 'Total Fare',
-        ok: 'OK',
-        historyTitle: 'Trip History',
-        totalTrips: 'Total Trips',
-        totalEarned: 'Total Earnings',
-        noHistory: 'No completed trips recorded yet.',
-        clearHistory: 'Clear',
-        confirmClear: 'Delete all trip history records?',
-        gpsUnsupported: 'GPS not supported in this browser.'
-      },
-      ta: {
-        appTitle: APP_NAME,
-        loginTitle: 'ஓட்டுநர் உள்நுழைவு',
-        loginSub: `${APP_NAME} மீட்டரைத் தொடங்க உள்நுழைக`,
-        regTitle: 'ஓட்டுநர் பதிவு',
-        regSub: `உங்கள் ${APP_NAME} ஓட்டுநர் கணக்கை உருவாக்கவும்`,
-        nameLbl: 'ஓட்டுநரின் முழுப் பெயர்',
-        vehLbl: 'வாகன எண் (எ.கா: WP ABC-1234)',
-        phoneLbl: 'தொலைபேசி எண்',
-        pinLbl: '4-இலக்க PIN',
-        loginBtn: 'உள்நுழைக',
-        regBtn: 'பதிவு செய்து தொடரவும்',
-        toReg: 'புதிய ஓட்டுநரா? இங்கே பதிவு செய்க',
-        toLogin: 'ஏற்கனவே கணக்கு உள்ளதா? உள்நுழைக',
-        fillAll: 'தேவையான அனைத்து விவரங்களையும் நிரப்பவும்.',
-        pinShort: 'PIN குறைந்தது 4 இலக்கங்கள் இருக்க வேண்டும்.',
-        badCreds: 'தவறான தொலைபேசி எண் அல்லது PIN.',
-        dupPhone: 'இந்த எண் ஏற்கனவே பதிவு செய்யப்பட்டுள்ளது.',
-        welcome: 'வணக்கம்',
-        logout: 'வெளியேறு',
-        presetTitle: 'வாகன வகையைத் தேர்ந்தெடுக்கவும்',
-        baseLbl: 'முதல் 1km (ரூ.)',
-        perKmLbl: 'அடுத்த 1km (ரூ.)',
-        waitLbl: 'காத்திருப்பு/நிமிடம்',
-        currentFare: 'தற்போதைய கட்டணம்',
-        dist: 'தூரம்',
-        waitTime: 'காத்திருப்பு நேரம்',
-        mapTitle: 'Live GPS Map',
-        centerBtn: 'Center',
-        startTrip: 'பயணத்தைத் தொடங்கு',
-        endTrip: 'பயணத்தை முடி',
-        passengerView: 'பயணி காட்சி',
-        driverView: 'Driver View',
-        passengerMeter: 'பயணி மீட்டர்',
-        sumTitle: `${APP_NAME} • பயண சுருக்கம்`,
-        date: 'தேதி/நேரம்',
-        vehicle: 'வாகனம்',
-        totalDist: 'மொத்த தூரம்',
-        waited: 'காத்திருந்த நேரம்',
-        totalFare: 'மொத்த கட்டணம்',
-        ok: 'சரி',
-        historyTitle: 'பயண வரலாறு (Trip History)',
-        totalTrips: 'மொத்த பயணங்கள்',
-        totalEarned: 'மொத்த வருமானம்',
-        noHistory: 'இதுவரை பயணப் பதிவுகள் இல்லை.',
-        clearHistory: 'அழி',
-        confirmClear: 'அனைத்து பயண வரலாற்றையும் நீக்கவா?',
-        gpsUnsupported: 'இந்த உலாவியில் GPS ஆதரவு இல்லை.'
-      }
-    };
+    // Live GPS marker (Orange)
+    const liveMarker = L.circleMarker([6.0535, 80.2210], {
+      radius: 9, color: "#ffffff", weight: 2, fillColor: "#f0883e", fillOpacity: 1
+    }).bindPopup("Your Live Location").addTo(map);
 
-    const PRESETS = [
-      { name: '3-Wheel', base: 100, perKm: 80, wait: 4 },
-      { name: 'Mini Car', base: 150, perKm: 110, wait: 6 },
-      { name: 'Sedan', base: 200, perKm: 135, wait: 8 },
-      { name: 'Van', base: 300, perKm: 160, wait: 10 }
-    ];
+    // Planned road route (Blue) & Actual traveled path (Green)
+    const plannedRouteLine = L.polyline([], { color: "#1f6feb", weight: 5, opacity: 0.85 }).addTo(map);
+    const traveledLine = L.polyline([], { color: "#3fb950", weight: 5 }).addTo(map);
 
-    const memoryStore = {};
-    function storageGet(key) {
-      try {
-        return window.localStorage.getItem(key);
-      } catch (_) {
-        return memoryStore[key] ?? null;
-      }
-    }
-    function storageSet(key, val) {
-      try {
-        window.localStorage.setItem(key, val);
-      } catch (_) {
-        memoryStore[key] = val;
-      }
-    }
-    function storageRemove(key) {
-      try {
-        window.localStorage.removeItem(key);
-      } catch (_) {
-        delete memoryStore[key];
-      }
-    }
+    let startPin = null;
+    let endPin = null;
+    let startCoords = null;
+    let endCoords = null;
 
-    let lang = storageGet('ceylon_ride_lang') || 'si';
-    if (!I18N[lang]) lang = 'si';
-
-    let theme = storageGet('ceylon_ride_theme') || 'dark';
-    if (theme !== 'dark' && theme !== 'light') theme = 'dark';
-
-    let drivers = {
-      '0770000000': {
-        name: 'Kasun Perera',
-        phone: '0770000000',
-        pin: '1234',
-        vehicleNo: 'WP ABC-1234'
-      }
-    };
-
-    try {
-      const savedDrivers = JSON.parse(storageGet('ceylon_ride_drivers') || '{}');
-      drivers = { ...drivers, ...savedDrivers };
-    } catch (_) {}
-
-    let allHistory = {};
-    try {
-      allHistory = JSON.parse(storageGet('ceylon_ride_history') || '{}') || {};
-    } catch (_) {
-      allHistory = {};
-    }
-
-    let activeDriver = null;
-    const savedActivePhone = storageGet('ceylon_ride_active_phone');
-    if (savedActivePhone && drivers[savedActivePhone]) {
-      activeDriver = drivers[savedActivePhone];
-    }
-
-    let isRegisterMode = false;
-    let selectedPresetIdx = 0;
-    let isTripRunning = false;
-    let totalDistanceMeters = 0;
-    let waitingSeconds = 0;
-    let lastPos = null;
-    let lastTickMs = null;
-    let isStationary = true;
     let watchId = null;
-    let tickerInterval = null;
-
-    // Live Map state
-    let map = null;
-    let driverMarker = null;
-    let routeLine = null;
-    let routeCoords = [];
-    let latestMapLatLng = [6.9271, 79.8612];
-
-    const $ = (id) => document.getElementById(id);
-
-    function t(key) {
-      return (I18N[lang] && I18N[lang][key]) || I18N.en[key] || key;
-    }
-
-    function formatDistanceMetersToKm(meters) {
-      const safeMeters = Math.max(0, Number(meters) || 0);
-      return `${(safeMeters / 1000).toFixed(3)} km`;
-    }
-
-    function getDriverTrips() {
-      if (!activeDriver) return [];
-      const list = allHistory[activeDriver.phone];
-      return Array.isArray(list) ? list : [];
-    }
-
-    function saveDriverTrip(trip) {
-      if (!activeDriver) return;
-      const phone = activeDriver.phone;
-      if (!Array.isArray(allHistory[phone])) {
-        allHistory[phone] = [];
-      }
-      allHistory[phone].unshift(trip);
-      storageSet('ceylon_ride_history', JSON.stringify(allHistory));
-    }
-
-    function clearDriverTrips() {
-      if (!activeDriver) return;
-      allHistory[activeDriver.phone] = [];
-      storageSet('ceylon_ride_history', JSON.stringify(allHistory));
-      renderHistory();
-    }
-
-    // ========================================================================
-    // LIVE MAP (LEAFLET + OPENSTREETMAP)
-    // ========================================================================
-    function initLiveMap() {
-      if (map || typeof window.L === 'undefined') return;
-      try {
-        map = L.map('live-map', { zoomControl: true }).setView(latestMapLatLng, 15);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          maxZoom: 19,
-          attribution: '&copy; OpenStreetMap'
-        }).addTo(map);
-
-        driverMarker = L.circleMarker(latestMapLatLng, {
-          radius: 8,
-          color: '#111317',
-          weight: 2,
-          fillColor: '#f59e0b',
-          fillOpacity: 1
-        }).addTo(map);
-
-        routeLine = L.polyline([], {
-          color: '#4ade80',
-          weight: 4,
-          opacity: 0.9
-        }).addTo(map);
-      } catch (_) {
-        map = null;
-      }
-    }
-
-    function refreshMapLayout() {
-      initLiveMap();
-      if (map) {
-        setTimeout(() => {
-          try {
-            map.invalidateSize();
-          } catch (_) {}
-        }, 120);
-      }
-    }
-
-    function updateMapPosition(lat, lng, appendToRoute) {
-      latestMapLatLng = [lat, lng];
-      $('map-coords').textContent = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-
-      initLiveMap();
-      if (!map) return;
-
-      try {
-        if (driverMarker) {
-          driverMarker.setLatLng(latestMapLatLng);
-        }
-        if (appendToRoute && routeLine) {
-          routeCoords.push(latestMapLatLng);
-          routeLine.setLatLngs(routeCoords);
-        }
-        map.panTo(latestMapLatLng, { animate: true });
-      } catch (_) {}
-    }
-
-    function resetMapRoute(lat, lng) {
-      routeCoords = [[lat, lng]];
-      latestMapLatLng = [lat, lng];
-      initLiveMap();
-      if (!map) return;
-      try {
-        if (routeLine) routeLine.setLatLngs(routeCoords);
-        if (driverMarker) driverMarker.setLatLng(latestMapLatLng);
-        map.setView(latestMapLatLng, 16);
-      } catch (_) {}
-    }
-
-    function applyTheme() {
-      document.documentElement.setAttribute('data-theme', theme);
-      $('theme-btn').textContent = theme === 'dark' ? '☀️' : '🌙';
-    }
-
-    function applyLanguage() {
-      document.title = APP_NAME;
-      document.documentElement.lang = lang;
-      $('lang-select').value = lang;
-      $('txt-app-title').textContent = t('appTitle');
-      $('logout-btn').textContent = t('logout');
-
-      $('auth-heading').textContent = isRegisterMode ? t('regTitle') : t('loginTitle');
-      $('auth-sub').textContent = isRegisterMode ? t('regSub') : t('loginSub');
-      $('lbl-name').textContent = t('nameLbl');
-      $('lbl-veh-no').textContent = t('vehLbl');
-      $('lbl-phone').textContent = t('phoneLbl');
-      $('lbl-pin').textContent = t('pinLbl');
-      $('auth-submit-btn').textContent = isRegisterMode ? t('regBtn') : t('loginBtn');
-      $('auth-switch-btn').textContent = isRegisterMode ? t('toLogin') : t('toReg');
-
-      if (activeDriver) {
-        $('driver-welcome').textContent = `${t('welcome')}, ${activeDriver.name}`;
-        $('driver-meta').textContent = `${activeDriver.vehicleNo} • ${activeDriver.phone}`;
-      }
-
-      $('txt-preset-title').textContent = t('presetTitle');
-      $('lbl-base').textContent = t('baseLbl');
-      $('lbl-perkm').textContent = t('perKmLbl');
-      $('lbl-wait').textContent = t('waitLbl');
-      $('lbl-dist').textContent = t('dist');
-      $('lbl-wait-time').textContent = t('waitTime');
-      $('txt-map-title').textContent = t('mapTitle');
-      $('center-map-btn').textContent = t('centerBtn');
-      $('trip-toggle-btn').textContent = isTripRunning ? t('endTrip') : t('startTrip');
-      $('passenger-view-btn').textContent = t('passengerView');
-
-      $('txt-history-title').textContent = t('historyTitle');
-      $('lbl-total-trips').textContent = t('totalTrips');
-      $('lbl-total-earned').textContent = t('totalEarned');
-      $('history-empty').textContent = t('noHistory');
-      $('clear-history-btn').textContent = t('clearHistory');
-
-      $('p-exit-btn').textContent = t('driverView');
-      $('p-fare-label').textContent = t('currentFare');
-      $('p-dist-label').textContent = t('dist');
-      $('p-wait-label').textContent = t('waitTime');
-
-      $('sum-title').textContent = t('sumTitle');
-      $('sum-ok-btn').textContent = t('ok');
-
-      renderUI();
-      renderHistory();
-    }
-
-    function syncViews() {
-      const loggedIn = Boolean(activeDriver);
-      $('auth-view').classList.toggle('hidden', loggedIn);
-      $('meter-view').classList.toggle('hidden', !loggedIn);
-      $('logout-btn').classList.toggle('hidden', !loggedIn || isTripRunning);
-
-      if (loggedIn && activeDriver) {
-        $('driver-welcome').textContent = `${t('welcome')}, ${activeDriver.name}`;
-        $('driver-meta').textContent = `${activeDriver.vehicleNo} • ${activeDriver.phone}`;
-        refreshMapLayout();
-        renderHistory();
-      }
-    }
-
-    function renderPresets() {
-      const container = $('presets-container');
-      container.innerHTML = '';
-      PRESETS.forEach((p, idx) => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'chip' + (idx === selectedPresetIdx ? ' active' : '');
-        btn.textContent = p.name;
-        btn.disabled = isTripRunning;
-        btn.addEventListener('click', () => {
-          if (isTripRunning) return;
-          selectedPresetIdx = idx;
-          $('base-fare').value = String(p.base);
-          $('per-km').value = String(p.perKm);
-          $('wait-rate').value = String(p.wait);
-          renderUI();
-        });
-        container.appendChild(btn);
-      });
-    }
-
-    function parseNum(id, fallback) {
-      const val = parseFloat($(id).value);
-      return Number.isFinite(val) && val >= 0 ? val : fallback;
-    }
-
-    // ========================================================================
-    // FIRST-METER FARE CALCULATION (Charges from meter 1 / 0.001 km)
-    // ========================================================================
-    function computeFare() {
-      const meters = Math.max(0, Number(totalDistanceMeters) || 0);
-      if (!isTripRunning && meters === 0 && waitingSeconds === 0) {
-        return 0;
-      }
-
-      const base = parseNum('base-fare', 100);
-      const perKm = parseNum('per-km', 80);
-      const waitPerMin = parseNum('wait-rate', 4);
-
-      // Meter-by-meter billing starting from the very first meter moved on map
-      const firstKmMeters = Math.min(meters, 1000);
-      const extraMeters = Math.max(0, meters - 1000);
-
-      const firstKmFare = (firstKmMeters / 1000) * base;
-      const extraFare = (extraMeters / 1000) * perKm;
-      const waitFare = (waitingSeconds / 60) * waitPerMin;
-
-      return firstKmFare + extraFare + waitFare;
-    }
-
-    function formatClock(totalSec) {
-      const sec = Math.max(0, Math.floor(totalSec));
-      const m = String(Math.floor(sec / 60)).padStart(2, '0');
-      const s = String(sec % 60).padStart(2, '0');
-      return `${m}:${s}`;
-    }
-
-    function formatDateTime(dateObj) {
-      const y = dateObj.getFullYear();
-      const m = String(dateObj.getMonth() + 1).padStart(2, '0');
-      const d = String(dateObj.getDate()).padStart(2, '0');
-      const hh = String(dateObj.getHours()).padStart(2, '0');
-      const mm = String(dateObj.getMinutes()).padStart(2, '0');
-      return `${y}-${m}-${d} ${hh}:${mm}`;
-    }
-
-    function renderHistory() {
-      const trips = getDriverTrips();
-      const listEl = $('history-list');
-      const emptyEl = $('history-empty');
-      const clearBtn = $('clear-history-btn');
-
-      $('val-total-trips').textContent = String(trips.length);
-      const totalEarned = trips.reduce((acc, item) => acc + (Number(item.fare) || 0), 0);
-      $('val-total-earned').textContent = `Rs. ${totalEarned.toFixed(2)}`;
-
-      listEl.innerHTML = '';
-      if (trips.length === 0) {
-        emptyEl.classList.remove('hidden');
-        clearBtn.classList.add('hidden');
-        return;
-      }
-
-      emptyEl.classList.add('hidden');
-      clearBtn.classList.remove('hidden');
-
-      trips.forEach((trip) => {
-        const row = document.createElement('div');
-        row.className = 'history-item';
-
-        const left = document.createElement('div');
-        left.className = 'history-item-left';
-
-        const title = document.createElement('div');
-        title.className = 'history-veh';
-        title.textContent = `${trip.vehicle}${trip.vehicleNo ? ' (' + trip.vehicleNo + ')' : ''}`;
-
-        const meta = document.createElement('div');
-        meta.className = 'history-meta';
-        const waitMin = Math.floor((trip.waitSec || 0) / 60);
-        const waitRem = (trip.waitSec || 0) % 60;
-        meta.textContent =
-          `${trip.date} • ${Number(trip.distKm || 0).toFixed(3)} km • Wait ${waitMin}m ${waitRem}s`;
-
-        left.appendChild(title);
-        left.appendChild(meta);
-
-        const right = document.createElement('div');
-        right.className = 'history-fare';
-        right.textContent = `Rs. ${Number(trip.fare || 0).toFixed(2)}`;
-
-        row.appendChild(left);
-        row.appendChild(right);
-        listEl.appendChild(row);
-      });
-    }
-
-    function renderUI() {
-      renderPresets();
-      $('base-fare').disabled = isTripRunning;
-      $('per-km').disabled = isTripRunning;
-      $('wait-rate').disabled = isTripRunning;
-      $('logout-btn').classList.toggle('hidden', !activeDriver || isTripRunning);
-
-      const tripBtn = $('trip-toggle-btn');
-      tripBtn.textContent = isTripRunning ? t('endTrip') : t('startTrip');
-      tripBtn.className = 'btn ' + (isTripRunning ? 'btn-end' : 'btn-start');
-
-      const fare = computeFare();
-      const clock = formatClock(waitingSeconds);
-      const vName = PRESETS[selectedPresetIdx].name;
-      const fareText = `Rs. ${fare.toFixed(2)}`;
-      const distText = formatDistanceMetersToKm(totalDistanceMeters);
-
-      $('meter-badge').textContent = `${APP_NAME} • ${vName.toUpperCase()} • ${t('currentFare')}`;
-      $('fare-display').textContent = fareText;
-      $('dist-display').textContent = distText;
-      $('wait-display').textContent = clock;
-      $('map-meters-badge').textContent = `${Math.floor(totalDistanceMeters)} m (${distText})`;
-
-      $('p-badge').textContent = `${APP_NAME} • ${t('passengerMeter')} • ${vName}`;
-      $('p-fare').textContent = fareText;
-      $('p-dist').textContent = distText;
-      $('p-wait').textContent = clock;
-
-      const base = parseNum('base-fare', 100);
-      const perKm = parseNum('per-km', 80);
-      const waitPerMin = parseNum('wait-rate', 4);
-      const vNo = activeDriver ? activeDriver.vehicleNo : '';
-      $('p-rates').textContent =
-        `${vNo ? vNo + '  |  ' : ''}${t('baseLbl')}: ${base}  |  ${t('perKmLbl')}: ${perKm}  |  ${t('waitLbl')}: ${waitPerMin}`;
-    }
+    let tripActive = false;
+    let lastPos = null;
+    let latestGps = null;
+    let totalMeters = 0;
+    let waitSeconds = 0;
+    let currentLatLng = [6.0535, 80.2210];
+    let followLiveGps = true;
 
     function haversineMeters(lat1, lon1, lat2, lon2) {
       const R = 6371000;
-      const toRad = (deg) => (deg * Math.PI) / 180;
+      const toRad = d => (d * Math.PI) / 180;
       const dLat = toRad(lat2 - lat1);
       const dLon = toRad(lon2 - lon1);
-      const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-        Math.sin(dLon / 2) * Math.sin(dLon / 2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      return R * c;
+      const a = Math.sin(dLat / 2) ** 2 +
+                Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
 
-    function stopSensors() {
-      if (watchId !== null && navigator.geolocation && navigator.geolocation.clearWatch) {
-        navigator.geolocation.clearWatch(watchId);
-        watchId = null;
-      }
-      if (tickerInterval !== null) {
-        clearInterval(tickerInterval);
-        tickerInterval = null;
-      }
+    function formatTime(sec) {
+      const m = String(Math.floor(sec / 60)).padStart(2, "0");
+      const s = String(sec % 60).padStart(2, "0");
+      return `${m}:${s}`;
     }
 
-    function startTrip() {
-      if (isTripRunning) return;
-      stopSensors();
+    async function geocodePlace(query) {
+      const q = encodeURIComponent(`${query}, Sri Lanka`);
+      const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${q}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Location search failed");
+      const data = await res.json();
+      if (!data || data.length === 0) throw new Error(`"${query}" හමු නොවීය`);
+      return {
+        lat: parseFloat(data[0].lat),
+        lon: parseFloat(data[0].lon),
+        name: data[0].display_name.split(",").slice(0, 2).join(", ")
+      };
+    }
 
-      isTripRunning = true;
-      totalDistanceMeters = 0;
-      waitingSeconds = 0;
-      lastPos = null;
-      lastTickMs = Date.now();
-      isStationary = true;
-      routeCoords = [];
-      refreshMapLayout();
-      renderUI();
-
-      tickerInterval = setInterval(() => {
-        if (!isTripRunning || lastTickMs === null) return;
-        const nowMs = Date.now();
-        const elapsedSec = Math.floor((nowMs - lastTickMs) / 1000);
-        if (elapsedSec > 0) {
-          lastTickMs += elapsedSec * 1000;
-          if (isStationary) {
-            waitingSeconds += elapsedSec;
-            renderUI();
-          }
-        }
-      }, 1000);
-
-      if (!('geolocation' in navigator)) {
-        alert(t('gpsUnsupported'));
+    function useCurrentAsStart() {
+      if (!latestGps) {
+        document.getElementById("statusMsg").textContent = "GPS signal ලැබෙන තුරු තත්පර කිහිපයක් ඉන්න...";
         return;
       }
+      startCoords = { lat: latestGps.latitude, lon: latestGps.longitude, name: "My Current Location" };
+      document.getElementById("startInput").value = `${latestGps.latitude.toFixed(5)}, ${latestGps.longitude.toFixed(5)}`;
+    }
+
+    async function planRoute() {
+      const statusEl = document.getElementById("statusMsg");
+      const routeInfoEl = document.getElementById("routeInfo");
+      const startText = document.getElementById("startInput").value.trim();
+      const endText = document.getElementById("endInput").value.trim();
+
+      if (!startText || !endText) {
+        statusEl.textContent = "Start location සහ End location දෙකම ඇතුළත් කරන්න.";
+        return;
+      }
+
+      statusEl.textContent = "Route එක සොයමින් පවතී...";
+      try {
+        // Parse coordinates if user clicked "My GPS", otherwise geocode text
+        const coordMatch = startText.match(/^(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)$/);
+        if (coordMatch) {
+          startCoords = { lat: parseFloat(coordMatch[1]), lon: parseFloat(coordMatch[2]), name: "Start GPS" };
+        } else {
+          startCoords = await geocodePlace(startText);
+        }
+
+        endCoords = await geocodePlace(endText);
+
+        // Fetch road route from OSRM
+        const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${startCoords.lon},${startCoords.lat};${endCoords.lon},${endCoords.lat}?overview=full&geometries=geojson`;
+        const res = await fetch(osrmUrl);
+        const routeData = await res.json();
+
+        if (!routeData.routes || routeData.routes.length === 0) {
+          throw new Error("මෙම ස්ථාන දෙක අතර මාර්ගයක් සොයාගත නොහැක.");
+        }
+
+        const route = routeData.routes[0];
+        const latLngs = route.geometry.coordinates.map(c => [c[1], c[0]]);
+        plannedRouteLine.setLatLngs(latLngs);
+
+        if (startPin) map.removeLayer(startPin);
+        if (endPin) map.removeLayer(endPin);
+
+        startPin = L.circleMarker([startCoords.lat, startCoords.lon], {
+          radius: 8, color: "#fff", weight: 2, fillColor: "#238636", fillOpacity: 1
+        }).bindPopup(`Start: ${startCoords.name}`).addTo(map);
+
+        endPin = L.circleMarker([endCoords.lat, endCoords.lon], {
+          radius: 8, color: "#fff", weight: 2, fillColor: "#da3633", fillOpacity: 1
+        }).bindPopup(`End: ${endCoords.name}`).addTo(map);
+
+        // Fit map to show entire route from Start to End
+        followLiveGps = false;
+        map.fitBounds(plannedRouteLine.getBounds(), { padding: [30, 30] });
+
+        const distKm = (route.distance / 1000).toFixed(1);
+        const mins = Math.round(route.duration / 60);
+        const baseFare = parseFloat(document.getElementById("baseFare").value) || 0;
+        const perKm = parseFloat(document.getElementById("perKm").value) || 0;
+        const estFare = baseFare + (Math.max(0, route.distance / 1000 - 1) * perKm);
+
+        routeInfoEl.style.display = "block";
+        routeInfoEl.innerHTML = `<strong>${startCoords.name} → ${endCoords.name}</strong><br/>
+          Distance: <b>${distKm} km</b> • Est. Time: <b>${mins} min</b> • Est. Fare: <b>Rs. ${estFare.toFixed(0)}</b>`;
+        statusEl.textContent = "Route ready! START TRIP ඔබා ගමන අරඹන්න.";
+      } catch (err) {
+        statusEl.textContent = `Error: ${err.message}`;
+      }
+    }
+
+    function updateUI() {
+      const km = totalMeters / 1000;
+      const baseFare = parseFloat(document.getElementById("baseFare").value) || 0;
+      const perKm = parseFloat(document.getElementById("perKm").value) || 0;
+      const perWaitMin = parseFloat(document.getElementById("perWaitMin").value) || 0;
+
+      let fare = 0;
+      if (tripActive || totalMeters > 0 || waitSeconds > 0) {
+        fare += baseFare;
+        if (km > 1) fare += (km - 1) * perKm;
+        fare += (waitSeconds / 60) * perWaitMin;
+      }
+
+      document.getElementById("fareDisplay").textContent = `Rs. ${fare.toFixed(2)}`;
+      document.getElementById("distDisplay").textContent = `${km.toFixed(3)} km`;
+      document.getElementById("waitDisplay").textContent = formatTime(waitSeconds);
+      document.getElementById("metersLabel").textContent = `${Math.round(totalMeters)} m (${km.toFixed(3)} km)`;
+    }
+
+    function startTracking() {
+      const statusEl = document.getElementById("statusMsg");
+      if (!navigator.geolocation) {
+        statusEl.textContent = "Browser does not support Geolocation.";
+        return;
+      }
+      if (watchId !== null) return;
 
       watchId = navigator.geolocation.watchPosition(
         (pos) => {
-          if (!isTripRunning) return;
-          const { latitude, longitude, speed, accuracy } = pos.coords;
+          const { latitude, longitude, accuracy } = pos.coords;
+          latestGps = { latitude, longitude };
+          currentLatLng = [latitude, longitude];
+          liveMarker.setLatLng(currentLatLng);
 
-          if (typeof accuracy === 'number' && accuracy > 25) {
-            return;
+          if (followLiveGps) {
+            map.setView(currentLatLng, Math.max(map.getZoom(), 14));
           }
 
-          if (lastPos === null) {
-            lastPos = { latitude, longitude };
-            isStationary = speed === null || speed < 1.2;
-            resetMapRoute(latitude, longitude);
-            $('map-coords').textContent = `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
-            renderUI();
-            return;
-          }
+          document.getElementById("locLabel").textContent =
+            `Live: ${latitude.toFixed(5)}, ${longitude.toFixed(5)} (±${Math.round(accuracy)}m)`;
 
-          // Only add meters when movement occurs on the live map
-          const d = haversineMeters(lastPos.latitude, lastPos.longitude, latitude, longitude);
-          if (d >= 1.0 && d <= 150.0) {
-            totalDistanceMeters += d;
-            lastPos = { latitude, longitude };
-            isStationary = false;
-            updateMapPosition(latitude, longitude, true);
-          } else if (speed === null || speed < 1.2 || d < 1.0) {
-            isStationary = true;
-            updateMapPosition(latitude, longitude, false);
+          if (tripActive) {
+            if (lastPos) {
+              const d = haversineMeters(lastPos.latitude, lastPos.longitude, latitude, longitude);
+              if (d >= 5 && d < 500) {
+                totalMeters += d;
+                traveledLine.addLatLng(currentLatLng);
+                lastPos = { latitude, longitude };
+                document.getElementById("tripModeLabel").textContent = "RUNNING";
+              } else {
+                document.getElementById("tripModeLabel").textContent = "WAITING";
+              }
+            } else {
+              lastPos = { latitude, longitude };
+              traveledLine.setLatLngs([currentLatLng]);
+              document.getElementById("tripModeLabel").textContent = "WAITING";
+            }
           }
-          renderUI();
+          updateUI();
         },
-        () => {
-          isStationary = true;
+        (err) => {
+          statusEl.textContent = `GPS Error: ${err.message} (Check Location permission)`;
         },
-        {
-          enableHighAccuracy: true,
-          maximumAge: 0,
-          timeout: 10000
-        }
+        { enableHighAccuracy: true, maximumAge: 1000, timeout: 15000 }
       );
     }
 
-    function endTrip() {
-      if (!isTripRunning) return;
-      stopSensors();
-      isTripRunning = false;
-
-      const finalFare = Number(computeFare().toFixed(2));
-      const finalDistKm = Number((totalDistanceMeters / 1000).toFixed(3));
-      const finalWait = waitingSeconds;
-      const vName = PRESETS[selectedPresetIdx].name;
-      const vNo = activeDriver ? activeDriver.vehicleNo : '';
-      const dateStr = formatDateTime(new Date());
-
-      saveDriverTrip({
-        id: Date.now(),
-        date: dateStr,
-        vehicle: vName,
-        vehicleNo: vNo,
-        distKm: finalDistKm,
-        waitSec: finalWait,
-        fare: finalFare
-      });
-
-      $('sum-title').textContent = t('sumTitle');
-      $('sum-date').textContent = `${t('date')}: ${dateStr}`;
-      $('sum-vehicle').textContent = `${t('vehicle')}: ${vName}${vNo ? ' (' + vNo + ')' : ''}`;
-      $('sum-dist').textContent = `${t('totalDist')}: ${finalDistKm.toFixed(3)} km`;
-      $('sum-wait').textContent = `${t('waited')}: ${Math.floor(finalWait / 60)}m ${finalWait % 60}s`;
-      $('sum-total').textContent = `${t('totalFare')}: Rs. ${finalFare.toFixed(2)}`;
-
-      $('summary-modal').classList.add('show');
-      renderHistory();
-      renderUI();
+    function toggleTrip() {
+      startTracking();
+      tripActive = !tripActive;
+      const btn = document.getElementById("tripBtn");
+      if (tripActive) {
+        followLiveGps = true;
+        lastPos = null;
+        btn.textContent = "END TRIP";
+        btn.className = "btn btn-stop";
+        document.getElementById("tripModeLabel").textContent = "WAITING";
+      } else {
+        btn.textContent = "START TRIP";
+        btn.className = "btn btn-start";
+        document.getElementById("tripModeLabel").textContent = "ENDED";
+      }
+      updateUI();
     }
 
-    $('lang-select').addEventListener('change', (e) => {
-      lang = e.target.value;
-      storageSet('ceylon_ride_lang', lang);
-      applyLanguage();
-    });
-
-    $('theme-btn').addEventListener('click', () => {
-      theme = theme === 'dark' ? 'light' : 'dark';
-      storageSet('ceylon_ride_theme', theme);
-      applyTheme();
-    });
-
-    $('center-map-btn').addEventListener('click', () => {
-      refreshMapLayout();
-      if (map) {
-        try {
-          map.setView(latestMapLatLng, 16);
-        } catch (_) {}
-      }
-    });
-
-    $('auth-switch-btn').addEventListener('click', () => {
-      isRegisterMode = !isRegisterMode;
-      $('reg-fields').classList.toggle('hidden', !isRegisterMode);
-      $('auth-error').classList.add('hidden');
-      applyLanguage();
-    });
-
-    $('auth-submit-btn').addEventListener('click', () => {
-      const phone = $('auth-phone').value.trim();
-      const pin = $('auth-pin').value.trim();
-      const name = $('reg-name').value.trim();
-      const veh = $('reg-veh').value.trim().toUpperCase();
-      const errEl = $('auth-error');
-
-      errEl.classList.add('hidden');
-
-      if (!phone || !pin || (isRegisterMode && (!name || !veh))) {
-        errEl.textContent = t('fillAll');
-        errEl.classList.remove('hidden');
-        return;
-      }
-
-      if (pin.length < 4) {
-        errEl.textContent = t('pinShort');
-        errEl.classList.remove('hidden');
-        return;
-      }
-
-      if (isRegisterMode) {
-        if (drivers[phone]) {
-          errEl.textContent = t('dupPhone');
-          errEl.classList.remove('hidden');
-          return;
-        }
-        const newAcc = { name, phone, pin, vehicleNo: veh };
-        drivers[phone] = newAcc;
-        storageSet('ceylon_ride_drivers', JSON.stringify(drivers));
-        activeDriver = newAcc;
-        storageSet('ceylon_ride_active_phone', phone);
-      } else {
-        const found = drivers[phone];
-        if (!found || found.pin !== pin) {
-          errEl.textContent = t('badCreds');
-          errEl.classList.remove('hidden');
-          return;
-        }
-        activeDriver = found;
-        storageSet('ceylon_ride_active_phone', phone);
-      }
-
-      syncViews();
-      renderUI();
-    });
-
-    $('logout-btn').addEventListener('click', () => {
-      if (isTripRunning) return;
-      stopSensors();
-      activeDriver = null;
-      storageRemove('ceylon_ride_active_phone');
-      syncViews();
-    });
-
-    ['base-fare', 'per-km', 'wait-rate'].forEach((id) => {
-      $(id).addEventListener('input', renderUI);
-    });
-
-    $('trip-toggle-btn').addEventListener('click', () => {
-      if (!isTripRunning) {
-        startTrip();
-      } else {
-        endTrip();
-      }
-    });
-
-    $('passenger-view-btn').addEventListener('click', () => {
-      renderUI();
-      $('passenger-overlay').classList.add('show');
-    });
-
-    $('p-exit-btn').addEventListener('click', () => {
-      $('passenger-overlay').classList.remove('show');
-      refreshMapLayout();
-    });
-
-    $('sum-ok-btn').addEventListener('click', () => {
-      $('summary-modal').classList.remove('show');
-      totalDistanceMeters = 0;
-      waitingSeconds = 0;
+    function resetMeter() {
+      tripActive = false;
+      totalMeters = 0;
+      waitSeconds = 0;
       lastPos = null;
-      lastTickMs = null;
-      isStationary = true;
-      renderUI();
-    });
+      followLiveGps = true;
+      traveledLine.setLatLngs([]);
+      plannedRouteLine.setLatLngs([]);
+      if (startPin) { map.removeLayer(startPin); startPin = null; }
+      if (endPin) { map.removeLayer(endPin); endPin = null; }
+      document.getElementById("startInput").value = "";
+      document.getElementById("endInput").value = "";
+      document.getElementById("routeInfo").style.display = "none";
+      const btn = document.getElementById("tripBtn");
+      btn.textContent = "START TRIP";
+      btn.className = "btn btn-start";
+      document.getElementById("tripModeLabel").textContent = "READY";
+      updateUI();
+    }
 
-    $('clear-history-btn').addEventListener('click', () => {
-      if (confirm(t('confirmClear'))) {
-        clearDriverTrips();
+    function centerMap() {
+      followLiveGps = true;
+      map.setView(currentLatLng, 16);
+    }
+
+    setInterval(() => {
+      if (tripActive && document.getElementById("tripModeLabel").textContent === "WAITING") {
+        waitSeconds += 1;
+        updateUI();
       }
-    });
+    }, 1000);
 
-    window.addEventListener('beforeunload', stopSensors);
-
-    applyTheme();
-    syncViews();
-    applyLanguage();
+    startTracking();
+    updateUI();
   </script>
 </body>
 </html>
