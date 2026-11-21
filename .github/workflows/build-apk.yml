@@ -31,7 +31,7 @@ jobs:
         run: |
           yes | /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
-      - name: Build Cordova Android APK
+      - name: Build Cordova Android APK with Location Permissions
         run: |
           npm install -g cordova
           cordova create app com.ceylonride.meter CeylonRide
@@ -39,6 +39,23 @@ jobs:
           cp -r www/* app/www/
           cd app
           cordova platform add android
+
+          MANIFEST="platforms/android/app/src/main/AndroidManifest.xml"
+          python3 -c '
+          p = "platforms/android/app/src/main/AndroidManifest.xml"
+          txt = open(p).read()
+          perms = [
+              "<uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\" />",
+              "<uses-permission android:name=\"android.permission.ACCESS_COARSE_LOCATION\" />",
+              "<uses-permission android:name=\"android.permission.ACCESS_LOCATION_EXTRA_COMMANDS\" />"
+          ]
+          for perm in perms:
+              if perm not in txt:
+                  txt = txt.replace("<manifest ", "<manifest\n    ", 1)
+                  txt = txt.replace("</manifest>", f"    {perm}\n</manifest>")
+          open(p, "w").write(txt)
+          '
+
           cordova build android
 
       - name: Upload APK
