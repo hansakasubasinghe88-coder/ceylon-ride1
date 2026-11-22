@@ -3,354 +3,717 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CEYLON RIDE - Route & Live GPS Meter</title>
+  <title>CEYLON RIDE</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
-    body { margin: 0; font-family: Arial, sans-serif; background: #0d1117; color: #f0f6fc; padding: 14px; }
-    .card { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 14px; margin-bottom: 14px; }
-    .rates { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
-    .rates label, .field label { font-size: 11px; color: #8b949e; display: block; margin-bottom: 4px; font-weight: 700; }
-    input[type="number"], input[type="text"] {
-      width: 100%; box-sizing: border-box; background: #0d1117; color: #fff;
-      border: 1px solid #30363d; border-radius: 8px; padding: 9px 10px; font-size: 14px;
+    :root {
+      --bg: #050505;
+      --card: #111111;
+      --card-2: #181818;
+      --border: #2a2a2a;
+      --yellow: #facc15;
+      --yellow-dark: #ca8a04;
+      --text: #f5f5f5;
+      --muted: #a3a3a3;
+      --green: #22c55e;
+      --red: #ef4444;
     }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 12px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    .brand {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--yellow);
+      letter-spacing: 0.8px;
+    }
+    .controls-inline {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    select, input {
+      width: 100%;
+      background: #090909;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 9px 10px;
+      font-size: 14px;
+    }
+    select { width: auto; padding: 6px 8px; font-size: 12px; border-color: var(--yellow); color: var(--yellow); }
+    input:focus { outline: none; border-color: var(--yellow); }
     .field { margin-bottom: 10px; }
+    .field label, .rates label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--yellow);
+      margin-bottom: 4px;
+      letter-spacing: 0.4px;
+    }
+    .rates {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .presets {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .preset-btn {
+      padding: 7px 4px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--card-2);
+      color: var(--text);
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .preset-btn.active {
+      background: var(--yellow);
+      color: #050505;
+      border-color: var(--yellow);
+    }
     .input-row { display: flex; gap: 6px; }
+    .btn {
+      width: 100%;
+      padding: 13px;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      margin-bottom: 8px;
+      letter-spacing: 0.4px;
+    }
+    .btn-yellow { background: var(--yellow); color: #050505; }
+    .btn-start { background: var(--green); color: #050505; }
+    .btn-stop { background: var(--red); color: #ffffff; }
+    .btn-dark { background: var(--card-2); color: var(--yellow); border: 1px solid var(--yellow); }
     .btn-small {
-      background: #21262d; color: #58a6ff; border: 1px solid #30363d; border-radius: 8px;
-      padding: 0 10px; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap;
+      background: var(--card-2);
+      color: var(--yellow);
+      border: 1px solid var(--yellow);
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
     }
-    .btn-route {
-      width: 100%; padding: 10px; background: #1f6feb; color: #fff; border: none;
-      border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 2px;
+    .fare-box { text-align: center; padding: 4px 0; }
+    .mode-pill {
+      display: inline-block;
+      background: rgba(250, 204, 21, 0.14);
+      color: var(--yellow);
+      border: 1px solid var(--yellow);
+      padding: 2px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
     }
-    .route-info {
-      margin-top: 8px; font-size: 12px; color: #58a6ff; background: #0d1117;
-      padding: 8px 10px; border-radius: 8px; border: 1px solid #30363d; display: none;
+    .fare {
+      font-size: 36px;
+      font-weight: 900;
+      color: var(--yellow);
+      margin: 8px 0;
     }
-    .fare-box { text-align: center; padding: 6px 0; }
-    .fare { font-size: 34px; font-weight: 700; color: #fff; margin: 4px 0; }
-    .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
-    .stat { background: #0d1117; border-radius: 10px; padding: 10px; text-align: center; }
-    .stat .val { font-size: 19px; font-weight: 700; }
-    .green { color: #3fb950; }
-    .orange { color: #d29922; }
-    #map { height: 270px; border-radius: 10px; overflow: hidden; }
-    .map-meta { display: flex; justify-content: space-between; font-size: 12px; color: #8b949e; margin-top: 8px; }
-    .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; margin-bottom: 10px; }
-    .btn-start { background: #238636; color: #fff; }
-    .btn-stop { background: #da3633; color: #fff; }
-    .btn-sec { background: #21262d; color: #c9d1d9; border: 1px solid #30363d; }
-    .status-msg { font-size: 12px; color: #d29922; margin-top: 6px; min-height: 16px; }
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 8px;
+    }
+    .stat {
+      background: #090909;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      text-align: center;
+    }
+    .stat .val { font-size: 19px; font-weight: 800; margin-top: 2px; }
+    .val-yellow { color: var(--yellow); }
+    .val-green { color: var(--green); }
+    #map { height: 255px; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); }
+    .map-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 8px;
+      gap: 8px;
+    }
+    .route-box {
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--yellow);
+      background: #090909;
+      padding: 9px 10px;
+      border-radius: 9px;
+      border: 1px solid var(--yellow);
+      display: none;
+    }
+    .msg { font-size: 12px; color: var(--yellow); min-height: 16px; margin-top: 6px; }
+    .err { font-size: 12px; color: var(--red); min-height: 16px; margin-top: 6px; }
+    .history-item {
+      background: #090909;
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--yellow);
+      border-radius: 8px;
+      padding: 9px 10px;
+      margin-bottom: 8px;
+      font-size: 12px;
+    }
+    .history-top { display: flex; justify-content: space-between; font-weight: 700; color: var(--yellow); }
   </style>
 </head>
 <body>
 
-  <!-- Route Planner Card -->
-  <div class="card">
+  <!-- Top Bar -->
+  <div class="topbar">
+    <div class="brand">CEYLON RIDE</div>
+    <div class="controls-inline">
+      <span id="driverBadge" style="font-size:12px;color:var(--yellow);font-weight:700;"></span>
+      <select id="langSelect" onchange="applyLanguage()">
+        <option value="en">EN</option>
+        <option value="si">සිං</option>
+        <option value="ta">தமிழ்</option>
+      </select>
+      <button id="logoutBtn" class="btn-small" type="button" onclick="logoutDriver()" style="display:none;">Logout</button>
+    </div>
+  </div>
+
+  <!-- Auth / Phone SMS OTP Card -->
+  <div id="authCard" class="card" style="max-width:440px;margin:14px auto;">
+    <h2 id="authTitle" style="margin:0 0 4px 0;text-align:center;color:var(--yellow);">DRIVER LOGIN / OTP</h2>
+    <p id="authSub" style="margin:0 0 14px 0;text-align:center;font-size:12px;color:var(--muted);">
+      Verify phone via SMS OTP & save profile to cloud
+    </p>
+
     <div class="field">
-      <label>START LOCATION (උදා: Matara)</label>
-      <div class="input-row">
-        <input id="startInput" type="text" placeholder="Enter start town/place..." />
-        <button class="btn-small" type="button" onclick="useCurrentAsStart()">My GPS</button>
+      <label id="lblDriverName">DRIVER NAME</label>
+      <input id="driverNameInput" type="text" placeholder="Driver Name" />
+    </div>
+    <div class="field">
+      <label id="lblVehicleNo">VEHICLE NUMBER</label>
+      <input id="vehicleNoInput" type="text" placeholder="WP ABC-1234" />
+    </div>
+    <div class="field">
+      <label id="lblPhone">PHONE NUMBER (07XXXXXXXX / +947XXXXXXXX)</label>
+      <input id="phoneInput" type="tel" placeholder="0771234567" />
+    </div>
+
+    <div id="recaptcha-container" style="margin-bottom:8px;"></div>
+    <button id="sendOtpBtn" class="btn btn-yellow" type="button" onclick="sendSmsOtp()">SEND SMS OTP</button>
+
+    <div id="otpBox" style="display:none;margin-top:6px;">
+      <div class="field">
+        <label id="lblOtp">6-DIGIT SMS OTP</label>
+        <input id="otpInput" type="number" placeholder="123456" />
+      </div>
+      <button id="verifyOtpBtn" class="btn btn-start" type="button" onclick="verifySmsOtp()">VERIFY & SAVE TO CLOUD</button>
+    </div>
+
+    <button id="demoEnterBtn" class="btn btn-dark" type="button" onclick="continueOfflineProfile()">
+      CONTINUE WITHOUT OTP (LOCAL TEST)
+    </button>
+
+    <div class="msg" id="authMsg"></div>
+    <div class="err" id="authErr"></div>
+  </div>
+
+  <!-- Main Ride & Meter Screen -->
+  <div id="mainScreen" style="display:none;">
+
+    <!-- Route Card -->
+    <div class="card">
+      <div class="field">
+        <label id="lblStart">START LOCATION</label>
+        <div class="input-row">
+          <input id="startInput" type="text" placeholder="Matara" />
+          <button class="btn-small" type="button" onclick="useMyGpsStart()">My GPS</button>
+        </div>
+      </div>
+      <div class="field">
+        <label id="lblEnd">END LOCATION</label>
+        <input id="endInput" type="text" placeholder="Galle" />
+      </div>
+      <button id="routeBtn" class="btn btn-yellow" type="button" onclick="showRoute()">SHOW ROUTE ON MAP</button>
+      <div class="route-box" id="routeBox"></div>
+    </div>
+
+    <!-- Fare & Meter Card -->
+    <div class="card">
+      <div class="presets">
+        <button class="preset-btn active" data-v="3-WHEEL" data-base="100" data-km="80" data-wait="4" onclick="selectPreset(this)">3-WHEEL</button>
+        <button class="preset-btn" data-v="MINI CAR" data-base="150" data-km="110" data-wait="5" onclick="selectPreset(this)">MINI CAR</button>
+        <button class="preset-btn" data-v="SEDAN" data-base="200" data-km="130" data-wait="6" onclick="selectPreset(this)">SEDAN</button>
+        <button class="preset-btn" data-v="VAN" data-base="300" data-km="160" data-wait="8" onclick="selectPreset(this)">VAN</button>
+      </div>
+
+      <div class="rates">
+        <div><label>1ST KM (RS.)</label><input id="baseFare" type="number" value="100" oninput="updateMeterUI()" /></div>
+        <div><label>NEXT KM (RS.)</label><input id="perKm" type="number" value="80" oninput="updateMeterUI()" /></div>
+        <div><label>WAIT/MIN (RS.)</label><input id="perWaitMin" type="number" value="4" oninput="updateMeterUI()" /></div>
+      </div>
+
+      <div class="fare-box">
+        <span class="mode-pill" id="modeBadge">CEYLON RIDE • 3-WHEEL • READY</span>
+        <div class="fare" id="fareVal">Rs. 0.00</div>
+        <div class="stats">
+          <div class="stat">
+            <div style="font-size:11px;color:var(--muted);">TRAVELED</div>
+            <div class="val val-green" id="distVal">0.000 km</div>
+          </div>
+          <div class="stat">
+            <div style="font-size:11px;color:var(--muted);">WAITING TIME</div>
+            <div class="val val-yellow" id="waitVal">00:00</div>
+          </div>
+        </div>
       </div>
     </div>
-    <div class="field">
-      <label>END LOCATION (උදා: Galle)</label>
-      <input id="endInput" type="text" placeholder="Enter destination town/place..." />
-    </div>
-    <button class="btn-route" type="button" onclick="planRoute()">SHOW ROUTE ON MAP</button>
-    <div class="route-info" id="routeInfo"></div>
-  </div>
 
-  <!-- Fare Meter Card -->
-  <div class="card">
-    <div class="rates">
-      <div><label>1ST KM (RS.)</label><input id="baseFare" type="number" value="100" /></div>
-      <div><label>NEXT KM (RS.)</label><input id="perKm" type="number" value="80" /></div>
-      <div><label>WAIT/MIN (RS.)</label><input id="perWaitMin" type="number" value="4" /></div>
-    </div>
-    <div class="fare-box">
-      <div style="font-size:11px;color:#8b949e;letter-spacing:1px;">CEYLON RIDE • 3-WHEEL • <span id="tripModeLabel">READY</span></div>
-      <div class="fare" id="fareDisplay">Rs. 0.00</div>
-      <div class="stats">
-        <div class="stat"><div style="font-size:11px;color:#8b949e;">TRAVELED</div><div class="val green" id="distDisplay">0.000 km</div></div>
-        <div class="stat"><div style="font-size:11px;color:#8b949e;">WAITING TIME</div><div class="val orange" id="waitDisplay">00:00</div></div>
+    <!-- Map Card -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <strong style="color:var(--yellow);">Live GPS & Route Map</strong>
+        <button class="btn-small" type="button" onclick="centerOnMe()">My Location</button>
       </div>
+      <div id="map"></div>
+      <div class="map-meta">
+        <span id="gpsText">Waiting for GPS...</span>
+        <span id="metersText">0 m (0.000 km)</span>
+      </div>
+      <div class="msg" id="statusMsg"></div>
     </div>
-  </div>
 
-  <!-- Live Map Card -->
-  <div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-      <strong>Live GPS & Route Map</strong>
-      <button class="btn-sec" style="padding:5px 10px;border-radius:6px;cursor:pointer;" onclick="centerMap()">My Location</button>
-    </div>
-    <div id="map"></div>
-    <div class="map-meta">
-      <span id="locLabel">Waiting for GPS...</span>
-      <span id="metersLabel">0 m (0.000 km)</span>
-    </div>
-    <div class="status-msg" id="statusMsg"></div>
-  </div>
+    <button id="tripBtn" class="btn btn-start" type="button" onclick="toggleTrip()">START TRIP</button>
+    <button id="resetBtn" class="btn btn-dark" type="button" onclick="resetAll()">RESET ALL</button>
 
-  <button class="btn btn-start" id="tripBtn" onclick="toggleTrip()">START TRIP</button>
-  <button class="btn btn-sec" onclick="resetMeter()">RESET ALL</button>
+    <!-- Trip History Card -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <strong style="color:var(--yellow);">Trip History</strong>
+        <span style="font-size:11px;color:var(--muted);" id="cloudSyncTag">Local + Cloud</span>
+      </div>
+      <div id="historyList"><div style="font-size:12px;color:var(--muted);">No trips saved yet.</div></div>
+    </div>
+
+  </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script>
-    const map = L.map("map").setView([6.0535, 80.2210], 11);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "&copy; OpenStreetMap"
-    }).addTo(map);
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getAuth, RecaptchaVerifier, signInWithPhoneNumber, onAuthStateChanged, signOut
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import {
+      getFirestore, doc, setDoc, addDoc, collection, serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    // Live GPS marker (Orange)
-    const liveMarker = L.circleMarker([6.0535, 80.2210], {
-      radius: 9, color: "#ffffff", weight: 2, fillColor: "#f0883e", fillOpacity: 1
-    }).bindPopup("Your Live Location").addTo(map);
+    const firebaseConfig = {
+      apiKey: "AIzaSyAlK3AlTcD9Mfz1ByjDR03GBMHryiHedSs",
+      authDomain: "ceylone-bd2bd.firebaseapp.com",
+      projectId: "ceylone-bd2bd",
+      storageBucket: "ceylone-bd2bd.firebasestorage.app",
+      messagingSenderId: "180126138819",
+      appId: "1:180126138819:web:f8237888b6c01798affd76",
+      measurementId: "G-1HN9QTVDJX"
+    };
 
-    // Planned road route (Blue) & Actual traveled path (Green)
-    const plannedRouteLine = L.polyline([], { color: "#1f6feb", weight: 5, opacity: 0.85 }).addTo(map);
-    const traveledLine = L.polyline([], { color: "#3fb950", weight: 5 }).addTo(map);
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
 
-    let startPin = null;
-    let endPin = null;
-    let startCoords = null;
-    let endCoords = null;
+    const I18N = {
+      en: { start: "START TRIP", stop: "END TRIP", route: "SHOW ROUTE ON MAP", reset: "RESET ALL" },
+      si: { start: "START TRIP (ගමන අරඹන්න)", stop: "END TRIP (ගමන අවසන්)", route: "SHOW ROUTE ON MAP", reset: "RESET ALL" },
+      ta: { start: "START TRIP", stop: "END TRIP", route: "SHOW ROUTE ON MAP", reset: "RESET ALL" }
+    };
 
-    let watchId = null;
-    let tripActive = false;
-    let lastPos = null;
-    let latestGps = null;
-    let totalMeters = 0;
-    let waitSeconds = 0;
-    let currentLatLng = [6.0535, 80.2210];
-    let followLiveGps = true;
+    let confirmationResult = null;
+    let recaptchaVerifier = null;
+    let currentUser = null;
+    let driverProfile = JSON.parse(localStorage.getItem("ceylon_ride_profile") || "null");
+
+    let mapReady = false, map, liveMarker, plannedLine, traveledLine;
+    let startPin = null, endPin = null, startCoords = null, endCoords = null;
+    let watchId = null, tripActive = false, lastPos = null, latestGps = null;
+    let totalMeters = 0, waitSeconds = 0, currentLatLng = [5.9491, 80.5470];
+    let followGps = true, lastMoveTime = 0, vehicleType = "3-WHEEL", tripState = "READY";
+
+    window.applyLanguage = function () {
+      const lang = document.getElementById("langSelect").value;
+      const t = I18N[lang] || I18N.en;
+      document.getElementById("routeBtn").textContent = t.route;
+      document.getElementById("resetBtn").textContent = t.reset;
+      document.getElementById("tripBtn").textContent = tripActive ? t.stop : t.start;
+    };
+
+    function formatLKPhone(raw) {
+      const c = raw.replace(/\s+/g, "");
+      if (c.startsWith("+")) return c;
+      if (c.startsWith("0") && c.length === 10) return "+94" + c.slice(1);
+      return "+94" + c;
+    }
+
+    window.sendSmsOtp = async function () {
+      document.getElementById("authErr").textContent = "";
+      document.getElementById("authMsg").textContent = "";
+      const rawPhone = document.getElementById("phoneInput").value.trim();
+      if (!rawPhone) {
+        document.getElementById("authErr").textContent = "Phone number ඇතුළත් කරන්න.";
+        return;
+      }
+      try {
+        if (!recaptchaVerifier) {
+          recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-container", { size: "invisible" });
+        }
+        const e164 = formatLKPhone(rawPhone);
+        document.getElementById("authMsg").textContent = `${e164} වෙත OTP යවමින් පවතී...`;
+        confirmationResult = await signInWithPhoneNumber(auth, e164, recaptchaVerifier);
+        document.getElementById("otpBox").style.display = "block";
+        document.getElementById("authMsg").textContent = "SMS OTP එවා ඇත. 6-digit code එක ඇතුළත් කරන්න.";
+      } catch (e) {
+        document.getElementById("authErr").textContent = `OTP Error: ${e.message}`;
+      }
+    };
+
+    window.verifySmsOtp = async function () {
+      document.getElementById("authErr").textContent = "";
+      const code = document.getElementById("otpInput").value.trim();
+      const name = document.getElementById("driverNameInput").value.trim() || "Driver";
+      const vehicle = document.getElementById("vehicleNoInput").value.trim();
+      if (!confirmationResult || !code) {
+        document.getElementById("authErr").textContent = "OTP code එක ඇතුළත් කරන්න.";
+        return;
+      }
+      try {
+        const cred = await confirmationResult.confirm(code);
+        currentUser = cred.user;
+        driverProfile = { uid: currentUser.uid, name, vehicle, phone: currentUser.phoneNumber };
+        localStorage.setItem("ceylon_ride_profile", JSON.stringify(driverProfile));
+        await setDoc(doc(db, "drivers", currentUser.uid), {
+          ...driverProfile,
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+        enterApp();
+      } catch (e) {
+        document.getElementById("authErr").textContent = `Verify failed: ${e.message}`;
+      }
+    };
+
+    window.continueOfflineProfile = function () {
+      const name = document.getElementById("driverNameInput").value.trim() || "Driver";
+      const vehicle = document.getElementById("vehicleNoInput").value.trim();
+      const phone = document.getElementById("phoneInput").value.trim();
+      driverProfile = { uid: phone || "local-driver", name, vehicle, phone };
+      localStorage.setItem("ceylon_ride_profile", JSON.stringify(driverProfile));
+      enterApp();
+    };
+
+    window.logoutDriver = async function () {
+      if (auth && currentUser) {
+        try { await signOut(auth); } catch (_) {}
+      }
+      localStorage.removeItem("ceylon_ride_profile");
+      driverProfile = null;
+      currentUser = null;
+      document.getElementById("mainScreen").style.display = "none";
+      document.getElementById("logoutBtn").style.display = "none";
+      document.getElementById("driverBadge").textContent = "";
+      document.getElementById("authCard").style.display = "block";
+    };
+
+    function enterApp() {
+      document.getElementById("authCard").style.display = "none";
+      document.getElementById("mainScreen").style.display = "block";
+      document.getElementById("logoutBtn").style.display = "inline-block";
+      document.getElementById("driverBadge").textContent = driverProfile?.name || "Driver";
+      renderHistory();
+      setTimeout(() => {
+        initMap();
+        map.invalidateSize();
+        startGpsWatch();
+      }, 100);
+    }
+
+    onAuthStateChanged(auth, (u) => {
+      if (u) {
+        currentUser = u;
+        if (!driverProfile) {
+          driverProfile = { uid: u.uid, name: u.phoneNumber || "Driver", phone: u.phoneNumber, vehicle: "" };
+        }
+        enterApp();
+      }
+    });
+    if (driverProfile) enterApp();
+
+    window.selectPreset = function (btn) {
+      document.querySelectorAll(".preset-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      vehicleType = btn.dataset.v;
+      document.getElementById("baseFare").value = btn.dataset.base;
+      document.getElementById("perKm").value = btn.dataset.km;
+      document.getElementById("perWaitMin").value = btn.dataset.wait;
+      updateMeterUI();
+    };
+
+    function initMap() {
+      if (mapReady) return;
+      mapReady = true;
+      map = L.map("map").setView(currentLatLng, 12);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "&copy; OpenStreetMap" }).addTo(map);
+      liveMarker = L.circleMarker(currentLatLng, {
+        radius: 9, color: "#050505", weight: 2, fillColor: "#facc15", fillOpacity: 1
+      }).bindPopup("Live Location").addTo(map);
+      plannedLine = L.polyline([], { color: "#facc15", weight: 5, dashArray: "6 6" }).addTo(map);
+      traveledLine = L.polyline([], { color: "#22c55e", weight: 5 }).addTo(map);
+    }
 
     function haversineMeters(lat1, lon1, lat2, lon2) {
-      const R = 6371000;
-      const toRad = d => (d * Math.PI) / 180;
-      const dLat = toRad(lat2 - lat1);
-      const dLon = toRad(lon2 - lon1);
-      const a = Math.sin(dLat / 2) ** 2 +
-                Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+      const R = 6371000, toRad = d => (d * Math.PI) / 180;
+      const a = Math.sin(toRad(lat2 - lat1) / 2) ** 2 +
+                Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(toRad(lon2 - lon1) / 2) ** 2;
       return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
 
     function formatTime(sec) {
-      const m = String(Math.floor(sec / 60)).padStart(2, "0");
-      const s = String(sec % 60).padStart(2, "0");
-      return `${m}:${s}`;
+      return `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(sec % 60).padStart(2, "0")}`;
     }
 
-    async function geocodePlace(query) {
-      const q = encodeURIComponent(`${query}, Sri Lanka`);
-      const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${q}`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error("Location search failed");
-      const data = await res.json();
-      if (!data || data.length === 0) throw new Error(`"${query}" හමු නොවීය`);
-      return {
-        lat: parseFloat(data[0].lat),
-        lon: parseFloat(data[0].lon),
-        name: data[0].display_name.split(",").slice(0, 2).join(", ")
-      };
+    function calcFare() {
+      if (!tripActive && totalMeters === 0 && waitSeconds === 0) return 0;
+      const km = totalMeters / 1000;
+      const base = parseFloat(document.getElementById("baseFare").value) || 0;
+      const nextKm = parseFloat(document.getElementById("perKm").value) || 0;
+      const waitRate = parseFloat(document.getElementById("perWaitMin").value) || 0;
+      let fare = base;
+      if (km > 1) fare += (km - 1) * nextKm;
+      fare += (waitSeconds / 60) * waitRate;
+      return fare;
     }
 
-    function useCurrentAsStart() {
+    window.updateMeterUI = function () {
+      const km = totalMeters / 1000;
+      document.getElementById("modeBadge").textContent = `CEYLON RIDE • ${vehicleType} • ${tripState}`;
+      document.getElementById("fareVal").textContent = `Rs. ${calcFare().toFixed(2)}`;
+      document.getElementById("distVal").textContent = `${km.toFixed(3)} km`;
+      document.getElementById("waitVal").textContent = formatTime(waitSeconds);
+      document.getElementById("metersText").textContent = `${Math.round(totalMeters)} m (${km.toFixed(3)} km)`;
+    };
+
+    async function geocode(q) {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(q + ", Sri Lanka")}`);
+      const d = await res.json();
+      if (!d.length) throw new Error(`"${q}" not found`);
+      return { lat: parseFloat(d[0].lat), lon: parseFloat(d[0].lon), name: d[0].display_name.split(",").slice(0, 2).join(", ") };
+    }
+
+    window.useMyGpsStart = function () {
       if (!latestGps) {
-        document.getElementById("statusMsg").textContent = "GPS signal ලැබෙන තුරු තත්පර කිහිපයක් ඉන්න...";
+        document.getElementById("statusMsg").textContent = "Waiting for GPS signal...";
         return;
       }
-      startCoords = { lat: latestGps.latitude, lon: latestGps.longitude, name: "My Current Location" };
+      startCoords = { lat: latestGps.latitude, lon: latestGps.longitude, name: "My GPS" };
       document.getElementById("startInput").value = `${latestGps.latitude.toFixed(5)}, ${latestGps.longitude.toFixed(5)}`;
-    }
+    };
 
-    async function planRoute() {
+    window.showRoute = async function () {
+      initMap();
+      const sTxt = document.getElementById("startInput").value.trim();
+      const eTxt = document.getElementById("endInput").value.trim();
       const statusEl = document.getElementById("statusMsg");
-      const routeInfoEl = document.getElementById("routeInfo");
-      const startText = document.getElementById("startInput").value.trim();
-      const endText = document.getElementById("endInput").value.trim();
-
-      if (!startText || !endText) {
-        statusEl.textContent = "Start location සහ End location දෙකම ඇතුළත් කරන්න.";
-        return;
-      }
-
-      statusEl.textContent = "Route එක සොයමින් පවතී...";
+      if (!sTxt || !eTxt) { statusEl.textContent = "Enter Start and End locations."; return; }
+      statusEl.textContent = "Finding route...";
       try {
-        // Parse coordinates if user clicked "My GPS", otherwise geocode text
-        const coordMatch = startText.match(/^(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)$/);
-        if (coordMatch) {
-          startCoords = { lat: parseFloat(coordMatch[1]), lon: parseFloat(coordMatch[2]), name: "Start GPS" };
-        } else {
-          startCoords = await geocodePlace(startText);
-        }
-
-        endCoords = await geocodePlace(endText);
-
-        // Fetch road route from OSRM
-        const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${startCoords.lon},${startCoords.lat};${endCoords.lon},${endCoords.lat}?overview=full&geometries=geojson`;
-        const res = await fetch(osrmUrl);
-        const routeData = await res.json();
-
-        if (!routeData.routes || routeData.routes.length === 0) {
-          throw new Error("මෙම ස්ථාන දෙක අතර මාර්ගයක් සොයාගත නොහැක.");
-        }
-
-        const route = routeData.routes[0];
-        const latLngs = route.geometry.coordinates.map(c => [c[1], c[0]]);
-        plannedRouteLine.setLatLngs(latLngs);
-
+        const m = sTxt.match(/^(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)$/);
+        startCoords = m ? { lat: parseFloat(m[1]), lon: parseFloat(m[2]), name: "Start GPS" } : await geocode(sTxt);
+        endCoords = await geocode(eTxt);
+        const rRes = await fetch(`https://router.project-osrm.org/route/v1/driving/${startCoords.lon},${startCoords.lat};${endCoords.lon},${endCoords.lat}?overview=full&geometries=geojson`);
+        const rData = await rRes.json();
+        if (!rData.routes?.length) throw new Error("No road route found.");
+        const rt = rData.routes[0];
+        plannedLine.setLatLngs(rt.geometry.coordinates.map(c => [c[1], c[0]]));
         if (startPin) map.removeLayer(startPin);
         if (endPin) map.removeLayer(endPin);
+        startPin = L.circleMarker([startCoords.lat, startCoords.lon], { radius: 8, color: "#050505", weight: 2, fillColor: "#22c55e", fillOpacity: 1 }).addTo(map);
+        endPin = L.circleMarker([endCoords.lat, endCoords.lon], { radius: 8, color: "#050505", weight: 2, fillColor: "#ef4444", fillOpacity: 1 }).addTo(map);
+        followGps = false;
+        map.fitBounds(plannedLine.getBounds(), { padding: [25, 25] });
+        document.getElementById("routeBox").style.display = "block";
+        document.getElementById("routeBox").innerHTML = `<b>${startCoords.name} → ${endCoords.name}</b><br/>Distance: <b>${(rt.distance / 1000).toFixed(1)} km</b> • Est: <b>${Math.round(rt.duration / 60)} min</b>`;
+        statusEl.textContent = "Route ready. Press START TRIP.";
+      } catch (e) {
+        statusEl.textContent = `Route error: ${e.message}`;
+      }
+    };
 
-        startPin = L.circleMarker([startCoords.lat, startCoords.lon], {
-          radius: 8, color: "#fff", weight: 2, fillColor: "#238636", fillOpacity: 1
-        }).bindPopup(`Start: ${startCoords.name}`).addTo(map);
+    function onGpsOk(pos) {
+      initMap();
+      const { latitude, longitude, accuracy } = pos.coords;
+      latestGps = { latitude, longitude };
+      currentLatLng = [latitude, longitude];
+      liveMarker.setLatLng(currentLatLng);
+      if (followGps) map.setView(currentLatLng, Math.max(map.getZoom(), 15));
+      document.getElementById("gpsText").textContent = `GPS: ${latitude.toFixed(5)}, ${longitude.toFixed(5)} (±${Math.round(accuracy)}m)`;
+      document.getElementById("statusMsg").textContent = "";
 
-        endPin = L.circleMarker([endCoords.lat, endCoords.lon], {
-          radius: 8, color: "#fff", weight: 2, fillColor: "#da3633", fillOpacity: 1
-        }).bindPopup(`End: ${endCoords.name}`).addTo(map);
+      if (tripActive) {
+        if (lastPos) {
+          const d = haversineMeters(lastPos.latitude, lastPos.longitude, latitude, longitude);
+          if (d >= 2 && d < 500) {
+            totalMeters += d;
+            traveledLine.addLatLng(currentLatLng);
+            lastPos = { latitude, longitude };
+            lastMoveTime = Date.now();
+            tripState = "RUNNING";
+          } else if (Date.now() - lastMoveTime > 4000) {
+            tripState = "WAITING";
+          }
+        } else {
+          lastPos = { latitude, longitude };
+          lastMoveTime = Date.now();
+          traveledLine.setLatLngs([currentLatLng]);
+          tripState = "WAITING";
+        }
+      }
+      updateMeterUI();
+    }
 
-        // Fit map to show entire route from Start to End
-        followLiveGps = false;
-        map.fitBounds(plannedRouteLine.getBounds(), { padding: [30, 30] });
+    function onGpsFail(err) {
+      document.getElementById("statusMsg").textContent = `GPS Error: ${err.message} (Enable Location & Permission)`;
+    }
 
-        const distKm = (route.distance / 1000).toFixed(1);
-        const mins = Math.round(route.duration / 60);
-        const baseFare = parseFloat(document.getElementById("baseFare").value) || 0;
-        const perKm = parseFloat(document.getElementById("perKm").value) || 0;
-        const estFare = baseFare + (Math.max(0, route.distance / 1000 - 1) * perKm);
+    function startGpsWatch() {
+      if (!navigator.geolocation) return;
+      navigator.geolocation.getCurrentPosition(onGpsOk, onGpsFail, { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 });
+      if (watchId !== null) return;
+      watchId = navigator.geolocation.watchPosition(onGpsOk, onGpsFail, { enableHighAccuracy: true, maximumAge: 1000, timeout: 15000 });
+    }
 
-        routeInfoEl.style.display = "block";
-        routeInfoEl.innerHTML = `<strong>${startCoords.name} → ${endCoords.name}</strong><br/>
-          Distance: <b>${distKm} km</b> • Est. Time: <b>${mins} min</b> • Est. Fare: <b>Rs. ${estFare.toFixed(0)}</b>`;
-        statusEl.textContent = "Route ready! START TRIP ඔබා ගමන අරඹන්න.";
-      } catch (err) {
-        statusEl.textContent = `Error: ${err.message}`;
+    async function saveTrip(tripObj) {
+      const localList = JSON.parse(localStorage.getItem("ceylon_ride_trips") || "[]");
+      localList.unshift(tripObj);
+      localStorage.setItem("ceylon_ride_trips", JSON.stringify(localList.slice(0, 25)));
+      renderHistory();
+
+      if (db && (currentUser || driverProfile?.uid)) {
+        try {
+          await addDoc(collection(db, "trips"), {
+            ...tripObj,
+            driverUid: currentUser?.uid || driverProfile.uid,
+            createdAt: serverTimestamp()
+          });
+          document.getElementById("statusMsg").textContent = "Trip saved to cloud & history.";
+        } catch (e) {
+          document.getElementById("statusMsg").textContent = `Saved locally (${e.message})`;
+        }
       }
     }
 
-    function updateUI() {
-      const km = totalMeters / 1000;
-      const baseFare = parseFloat(document.getElementById("baseFare").value) || 0;
-      const perKm = parseFloat(document.getElementById("perKm").value) || 0;
-      const perWaitMin = parseFloat(document.getElementById("perWaitMin").value) || 0;
-
-      let fare = 0;
-      if (tripActive || totalMeters > 0 || waitSeconds > 0) {
-        fare += baseFare;
-        if (km > 1) fare += (km - 1) * perKm;
-        fare += (waitSeconds / 60) * perWaitMin;
-      }
-
-      document.getElementById("fareDisplay").textContent = `Rs. ${fare.toFixed(2)}`;
-      document.getElementById("distDisplay").textContent = `${km.toFixed(3)} km`;
-      document.getElementById("waitDisplay").textContent = formatTime(waitSeconds);
-      document.getElementById("metersLabel").textContent = `${Math.round(totalMeters)} m (${km.toFixed(3)} km)`;
-    }
-
-    function startTracking() {
-      const statusEl = document.getElementById("statusMsg");
-      if (!navigator.geolocation) {
-        statusEl.textContent = "Browser does not support Geolocation.";
+    function renderHistory() {
+      const list = JSON.parse(localStorage.getItem("ceylon_ride_trips") || "[]");
+      const el = document.getElementById("historyList");
+      if (!list.length) {
+        el.innerHTML = `<div style="font-size:12px;color:var(--muted);">No trips saved yet.</div>`;
         return;
       }
-      if (watchId !== null) return;
-
-      watchId = navigator.geolocation.watchPosition(
-        (pos) => {
-          const { latitude, longitude, accuracy } = pos.coords;
-          latestGps = { latitude, longitude };
-          currentLatLng = [latitude, longitude];
-          liveMarker.setLatLng(currentLatLng);
-
-          if (followLiveGps) {
-            map.setView(currentLatLng, Math.max(map.getZoom(), 14));
-          }
-
-          document.getElementById("locLabel").textContent =
-            `Live: ${latitude.toFixed(5)}, ${longitude.toFixed(5)} (±${Math.round(accuracy)}m)`;
-
-          if (tripActive) {
-            if (lastPos) {
-              const d = haversineMeters(lastPos.latitude, lastPos.longitude, latitude, longitude);
-              if (d >= 5 && d < 500) {
-                totalMeters += d;
-                traveledLine.addLatLng(currentLatLng);
-                lastPos = { latitude, longitude };
-                document.getElementById("tripModeLabel").textContent = "RUNNING";
-              } else {
-                document.getElementById("tripModeLabel").textContent = "WAITING";
-              }
-            } else {
-              lastPos = { latitude, longitude };
-              traveledLine.setLatLngs([currentLatLng]);
-              document.getElementById("tripModeLabel").textContent = "WAITING";
-            }
-          }
-          updateUI();
-        },
-        (err) => {
-          statusEl.textContent = `GPS Error: ${err.message} (Check Location permission)`;
-        },
-        { enableHighAccuracy: true, maximumAge: 1000, timeout: 15000 }
-      );
+      el.innerHTML = list.map(t => `
+        <div class="history-item">
+          <div class="history-top"><span>${t.start} → ${t.end}</span><span>Rs. ${t.fare.toFixed(2)}</span></div>
+          <div style="color:var(--muted);margin-top:3px;">${t.distKm.toFixed(3)} km • Wait ${formatTime(t.waitSec)} • ${t.vehicle}</div>
+        </div>
+      `).join("");
     }
 
-    function toggleTrip() {
-      startTracking();
+    window.toggleTrip = async function () {
+      startGpsWatch();
       tripActive = !tripActive;
       const btn = document.getElementById("tripBtn");
       if (tripActive) {
-        followLiveGps = true;
+        followGps = true;
         lastPos = null;
-        btn.textContent = "END TRIP";
+        lastMoveTime = Date.now();
+        tripState = "WAITING";
         btn.className = "btn btn-stop";
-        document.getElementById("tripModeLabel").textContent = "WAITING";
       } else {
-        btn.textContent = "START TRIP";
+        tripState = "ENDED";
         btn.className = "btn btn-start";
-        document.getElementById("tripModeLabel").textContent = "ENDED";
+        await saveTrip({
+          start: document.getElementById("startInput").value.trim() || "GPS Start",
+          end: document.getElementById("endInput").value.trim() || "GPS End",
+          distKm: totalMeters / 1000,
+          waitSec: waitSeconds,
+          fare: calcFare(),
+          vehicle: vehicleType,
+          driverName: driverProfile?.name || "Driver",
+          time: new Date().toISOString()
+        });
       }
-      updateUI();
-    }
+      applyLanguage();
+      updateMeterUI();
+    };
 
-    function resetMeter() {
+    window.resetAll = function () {
       tripActive = false;
+      tripState = "READY";
       totalMeters = 0;
       waitSeconds = 0;
       lastPos = null;
-      followLiveGps = true;
-      traveledLine.setLatLngs([]);
-      plannedRouteLine.setLatLngs([]);
+      followGps = true;
+      if (traveledLine) traveledLine.setLatLngs([]);
+      if (plannedLine) plannedLine.setLatLngs([]);
       if (startPin) { map.removeLayer(startPin); startPin = null; }
       if (endPin) { map.removeLayer(endPin); endPin = null; }
       document.getElementById("startInput").value = "";
       document.getElementById("endInput").value = "";
-      document.getElementById("routeInfo").style.display = "none";
-      const btn = document.getElementById("tripBtn");
-      btn.textContent = "START TRIP";
-      btn.className = "btn btn-start";
-      document.getElementById("tripModeLabel").textContent = "READY";
-      updateUI();
-    }
+      document.getElementById("routeBox").style.display = "none";
+      document.getElementById("tripBtn").className = "btn btn-start";
+      applyLanguage();
+      updateMeterUI();
+    };
 
-    function centerMap() {
-      followLiveGps = true;
-      map.setView(currentLatLng, 16);
-    }
+    window.centerOnMe = function () {
+      followGps = true;
+      startGpsWatch();
+      if (map) map.setView(currentLatLng, 16);
+    };
 
     setInterval(() => {
-      if (tripActive && document.getElementById("tripModeLabel").textContent === "WAITING") {
+      if (tripActive && tripState === "WAITING") {
         waitSeconds += 1;
-        updateUI();
+        updateMeterUI();
       }
     }, 1000);
 
-    startTracking();
-    updateUI();
+    applyLanguage();
+    updateMeterUI();
   </script>
 </body>
 </html>
